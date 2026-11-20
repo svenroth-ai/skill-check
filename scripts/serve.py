@@ -23,6 +23,7 @@ import os
 import re
 import socket
 import sys
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -108,9 +109,18 @@ def buy_url() -> str:
     return url if isinstance(url, str) and url.startswith("https://") else ""
 
 
+INTENT_TEXT = {  # what a click in the view says to the chat: fixed words, only the skill name is filled in
+    "upgrade": 'Upgrade the skill "{skill}" with Skill Upgrade.',  # no leading slash: a plugin may not submit a command
+    "control": 'Keep control of the skill "{skill}".',
+}
+LISTEN_SECONDS = 8  # the chat side counts as listening when it asked for work this recently
+
+
 def make_handler(out: Path, roots: list[Path] | None = None, projects: Path | None = None):
     roots = DEFAULT_ROOTS if roots is None else roots
     projects = projects or Path.home() / ".claude" / "projects"
+    queue: list[str] = []  # what the user asked for in the view, waiting for the chat to pick it up
+    seen = {"at": 0.0}
 
     class Handler(BaseHTTPRequestHandler):
         def _send(self, code: int, body: bytes, ctype: str) -> None:
@@ -138,6 +148,8 @@ def make_handler(out: Path, roots: list[Path] | None = None, projects: Path | No
                 return self._file(ROOT / "web" / "assets" / name, ctype)
             if path == "/concept":
                 return self._file(ROOT / "web" / "index.html")
+            if path == "/api/intent/status":
+                return self._json({"listening": time.monotonic() - seen["at"] < LISTEN_SECONDS})
             if path == "/api/scan":
                 return self._file(out / "check.json", "application/json; charset=utf-8")
             if path == "/api/view":
@@ -179,7 +191,10 @@ def make_handler(out: Path, roots: list[Path] | None = None, projects: Path | No
             if host not in ALLOWED_HOSTS or not same:  # a page on another site must not write answers
                 return self._send(403, b"forbidden", "text/plain; charset=utf-8")
             path, _, query = self.path.partition("?")
-            if path not in ("/api/answers", "/api/origin") or not (self.headers.get("Content-Type") or "").startswith("application/json"):
+            if path == "/api/intent/take":  # the chat side asks for the next click
+                seen["at"] = time.monotonic()
+                return self._json({"text": queue.pop(0)} if queue else {})
+            if path not in ("/api/answers", "/api/origin", "/api/intent") or not (self.headers.get("Content-Type") or "").startswith("application/json"):
                 return self._send(404, b"not found", "text/plain; charset=utf-8")
             d = skill_path(roots, urllib.parse.parse_qs(query).get("name", [""])[0])
             try:
@@ -189,6 +204,13 @@ def make_handler(out: Path, roots: list[Path] | None = None, projects: Path | No
                 body = None
             if d is None or not isinstance(body, dict):
                 return self._send(400, b"bad request", "text/plain; charset=utf-8")
+            if path == "/api/intent":  # a click in the view that should go on in the chat
+                action = body.get("action")
+                if action not in INTENT_TEXT or skill_origin.origin(d)["kind"] != "own":
+                    return self._send(400, b"bad request", "text/plain; charset=utf-8")
+                if len(queue) < 5:
+                    queue.append(INTENT_TEXT[action].format(skill=d.name))
+                return self._json({"queued": True, "listening": time.monotonic() - seen["at"] < LISTEN_SECONDS})
             if path == "/api/origin":  # the user's own word on whether a skill is theirs
                 if not isinstance(body.get("mine"), bool):
                     return self._send(400, b"bad request", "text/plain; charset=utf-8")

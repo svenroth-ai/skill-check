@@ -160,6 +160,17 @@ class Route(unittest.TestCase):
             self.assertEqual(json.loads(self.req("POST", "/api/origin?name=demo", {"mine": True})[1])["origin"], {"kind": "own"})
         self.assertTrue((home / ".shipwright" / "skill-check" / "origin_marks.json").is_file())
 
+    def test_a_click_in_the_view_is_handed_to_the_chat_in_fixed_words(self):
+        s, b = self.req("POST", "/api/intent?name=demo", {"action": "upgrade"})
+        self.assertEqual((s, json.loads(b)), (200, {"queued": True, "listening": False}))
+        self.assertEqual(self.req("POST", "/api/intent?name=demo", {"action": "rm -rf"})[0], 400)  # no free text
+        self.assertEqual(self.req("POST", "/api/intent?name=nope", {"action": "upgrade"})[0], 400)
+        self.assertEqual(self.req("POST", "/api/intent?name=demo", {"action": "upgrade"}, origin="http://evil.example")[0], 403)
+        s, b = self.req("POST", "/api/intent/take", {})
+        self.assertEqual(json.loads(b), {"text": 'Upgrade the skill "demo" with Skill Upgrade.'})
+        self.assertEqual(json.loads(self.req("POST", "/api/intent/take", {})[1]), {})  # taken once
+        self.assertTrue(json.loads(self.req("GET", "/api/intent/status", origin=None)[1])["listening"])  # it just asked
+
 
 if __name__ == "__main__":
     unittest.main()

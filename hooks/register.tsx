@@ -13,6 +13,7 @@ type Summary = { skills: number; findings: number; hard: number; top: { skill: s
 // the right fallback: nothing here is state worth keeping.
 let summary: Summary | undefined
 let isServing = false
+let isListening = false
 let python: string[] | undefined
 
 function parseSummary(out: string): Summary | undefined {
@@ -43,7 +44,7 @@ async function findPython($: any): Promise<string[] | undefined> {
 
 // The server exits with code 2 when the port is taken, so ask it: up means the scan route answers.
 async function waitForServer($: any, py: string[]): Promise<boolean> {
-  const probe = `import urllib.request as u; u.urlopen("${URL}/api/skills", timeout=4)`
+  const probe = `import urllib.request as u; u.urlopen("${URL}/api/intent/status", timeout=4)`
   for (let i = 0; i < 20; i++) {
     try {
       const r = await $.process.run([...py, '-c', probe], { timeoutMs: 5000 })
@@ -89,6 +90,26 @@ export const register: Register = on => {
       })()
     }
     const isUp = await waitForServer($, py)
+    if (isUp && !isListening) {
+      isListening = true
+      // A click in the view (for example "Start the upgrade") is picked up here and goes on in the chat, as the
+      // person's own words. The view only ever queues fixed sentences for a skill that exists and is the person's.
+      let isBusy = false
+      $.ui.log('skill-check chat link: started', { to: 'debug' })
+      $.clock.every(2000, async () => {
+        if (isBusy) return
+        isBusy = true
+        try {
+          const r = await $.http.fetch(`${URL}/api/intent/take`, { method: 'POST', headers: { Origin: URL, 'Content-Type': 'application/json' }, body: '{}' })
+          const text = r.ok ? JSON.parse(r.text || '{}').text : undefined
+          if (typeof text === 'string' && text) await $.prompt.submit({ text, asUser: true })
+        } catch (err) {
+          $.ui.log(`skill-check chat link: ${String(err)}`, { to: 'debug' })
+        } finally {
+          isBusy = false
+        }
+      })
+    }
     const head = `Skill Check scanned ${summary.skills} ${summary.skills === 1 ? 'skill' : 'skills'}` +
       (summary.hard ? ` and found ${summary.hard} hard ${summary.hard === 1 ? 'finding' : 'findings'}.` : ' and found nothing that breaks a limit.')
     if (!isUp) {

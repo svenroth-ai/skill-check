@@ -488,6 +488,10 @@ i[data-agent],i[data-host]{font-style:normal}
   function get(u){return fetch(u).then(function(r){if(!r.ok)throw new Error(u);return r.json()})}
   function plain(s){return String(s==null?'':s).replace(/`/g,'')}
   function plural(n,one,many){return n===1?one:many}
+  function sendToChat(action,skill){
+    return fetch('/api/intent?name='+encodeURIComponent(skill),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:action,skill:skill})})
+      .then(function(r){if(!r.ok)throw 0;return r.json()});
+  }
   function notOwn(o){return !!o&&o.kind!=='own'}
   function originPill(o){return o.kind==='plugin'?'From a plugin':o.kind==='installed'?'Installed from '+esc(o.source):'Not yours'}
   function originNote(o){
@@ -616,8 +620,17 @@ i[data-agent],i[data-host]{font-style:normal}
         buy.hidden=true;inst.hidden=false;
         var cmd='/skill-upgrade'+(chosen?' '+chosen:'');
         inst.innerHTML='<h2 tabindex="-1" style="margin-top:0">Upgrade '+(chosen?esc(chosen):'a skill')+'</h2>'+
-          '<p class="sub tight">Skill Upgrade is installed. Type this in the chat and it takes you through the questions, one skill at a time:</p>'+
+          '<p class="sub tight">Skill Upgrade is installed. It takes you through the questions, one skill at a time, in the chat.</p>'+
+          (chosen?'<p><button class="btn big" id="go-chat" type="button">Start the upgrade in the chat</button> <span id="sent" role="status" class="note"></span></p>':'')+
+          '<p class="sub tight">Or type this in the chat yourself:</p>'+
           '<p><code id="cmd" style="font-size:17px">'+esc(cmd)+'</code> <button class="btn" id="copy" type="button">Copy</button> <span id="copied" role="status" class="note"></span></p><div id="where"></div>';
+        var gc=$('go-chat');
+        if(gc)gc.onclick=function(){
+          gc.disabled=true;
+          sendToChat('upgrade',chosen).then(function(r){
+            $('sent').textContent=r.listening?'Sent. Look at the chat on the left: Claude starts there.':'Sent. If nothing starts in the chat, type the command below.';
+          }).catch(function(){gc.disabled=false;$('sent').textContent='That did not work. Type the command below.'});
+        };
         if(chosen)get('/api/upgrade?name='+encodeURIComponent(chosen)).then(function(u){
           var w=$('where');if(!w)return;
           var enc=encodeURIComponent(chosen);
@@ -833,7 +846,13 @@ i[data-agent],i[data-host]{font-style:normal}
           '<div id="turn-note" hidden class="card" style="margin-top:var(--s2)"><p style="margin:0 0 var(--s1)"><b>Say "keep control" in the chat.</b> Skill Upgrade saves the list and turns it on. Then check here:</p><p style="margin:0"><a class="btn" href="#/control-done/'+e+'">Check the result</a></p></div>';
       }
       body.innerHTML=h;
-      var b=$('turn-on');if(b)b.onclick=function(){$('turn-note').hidden=false;b.hidden=true};
+      var b=$('turn-on');if(b)b.onclick=function(){
+        b.disabled=true;
+        sendToChat('control',name).then(function(r){
+          if(r.listening){b.hidden=true;$('turn-note').hidden=false;$('turn-note').querySelector('p').innerHTML='<b>Sent to the chat.</b> Skill Upgrade saves the list and turns control on there. Then check here:'}
+          else{$('turn-note').hidden=false;b.hidden=true}
+        }).catch(function(){$('turn-note').hidden=false;b.hidden=true});
+      };
       body.querySelector('h2').focus({preventScroll:true});
     }).catch(function(){if(my===seq)body.innerHTML='<p class="sub">This skill could not be read. <a href="#/skills">Back to all skills</a></p>'});
   }

@@ -151,6 +151,7 @@ def main() -> int:
             check(page.locator("#clist-body .summary .num").nth(1).inner_text() == "2", f"{label}: list shows the tests")
             check(page.locator("#clist-body .pill:has-text('Prose instruction')").count() == 1, f"{label}: prose instruction is labelled")
             page.click("#turn-on")
+            page.wait_for_selector("#turn-note", state="visible", timeout=4000)
             check(page.locator("#turn-note").is_visible(), f"{label}: turning on points to the chat")
             page.goto(url + "#/control-done/demo")
             page.reload()
