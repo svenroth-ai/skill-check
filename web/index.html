@@ -1,0 +1,398 @@
+<title>Skill Check Mockup</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: one centered app window (sidebar + view) on the svenroth.ai beige ground. Single light look by design. */
+:root{
+  --bg:#eceae4; --bg-alt:#f4f2ec; --card:#fbfaf7; --cream:#f1efe9; --pill:#e5e2da;
+  --line:#e2ded6; --border-strong:#cdc7ba; --ink:#15141a; --lead:#45433d; --muted:#6c6a64;
+  --accent:#128a76; --accent-deep:#0c8470; --teal-deep:#0b7160; --teal-soft:#cfe6df;
+  --rust:#a63d18; --rust-soft:#f3e1d6; --dark:#1e1f25; --dark-line:#2f2e37; --on-dark:#f4f2ec; --body-on-dark:#c3c1b9; --mint:#9fd8cb;
+  --sans:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"Geist Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --shadow-card:0 2px 4px rgba(20,20,15,.04),0 16px 34px -20px rgba(20,20,15,.13);
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;letter-spacing:-.01em;
+  padding-block:32px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
+.eyebrow{font-family:var(--mono);font-size:12px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:var(--teal-deep)}
+h1{font-size:clamp(34px,6vw,54px);line-height:1.05;font-weight:700;letter-spacing:-1.4px;margin:8px 0 12px;text-wrap:balance}
+h2{font-size:24px;line-height:1.15;font-weight:700;letter-spacing:-.6px;margin:0 0 4px;text-wrap:balance}
+h3{font-size:16px;font-weight:800;letter-spacing:-.2px;margin:0 0 6px}
+p{margin:0}
+.lead{font-size:18px;line-height:1.55;color:var(--lead);max-width:640px}
+.note{display:flex;gap:10px;align-items:flex-start;background:var(--rust-soft);color:#5a2410;border:1px solid #e6c4b0;border-radius:8px;padding:10px 14px;font-size:14px}
+.app{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-card);overflow:hidden}
+.topbar{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid var(--line);background:var(--bg-alt)}
+.url{font-family:var(--mono);font-size:12px;background:var(--pill);border-radius:999px;padding:4px 12px;color:var(--ink)}
+.local{font-size:13px;color:var(--muted)}
+.body{display:grid;grid-template-columns:220px minmax(0,1fr)}
+nav{border-right:1px solid var(--line);padding:14px 10px;display:flex;flex-direction:column;gap:4px;background:var(--bg-alt)}
+nav button{all:unset;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 12px;border-radius:8px;font-size:14px;font-weight:500;color:var(--lead);box-sizing:border-box}
+nav button:hover{background:var(--pill)}
+nav button[aria-current="true"]{background:var(--ink);color:var(--on-dark)}
+nav button:focus-visible,.btn:focus-visible,.row:focus-visible,.chk:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tag{font-family:var(--mono);font-size:10px;letter-spacing:1px;text-transform:uppercase;border-radius:999px;padding:2px 8px;background:var(--teal-soft);color:var(--teal-deep);white-space:nowrap}
+.tag.pro{background:var(--ink);color:var(--on-dark)}
+nav button[aria-current="true"] .tag{background:var(--mint);color:#06463a}
+nav button[aria-current="true"] .tag.pro{background:var(--rust);color:#fff}
+.view{padding:24px;display:flex;flex-direction:column;gap:20px;min-width:0}
+.head{display:flex;flex-direction:column;gap:6px}
+.head p{color:var(--muted);max-width:620px}
+.btn{all:unset;cursor:pointer;box-sizing:border-box;display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:#fff;font-weight:600;font-size:15px;padding:10px 18px;border-radius:8px}
+.btn:hover{background:var(--accent-deep)}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--border-strong)}
+.btn.ghost:hover{background:var(--pill)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.term{background:var(--dark);color:var(--body-on-dark);border-radius:14px;padding:18px 20px;font-family:var(--mono);font-size:13px;line-height:1.7;overflow-x:auto}
+.term .c{color:var(--on-dark)} .term .m{color:var(--mint)} .term .d{color:#8d8b95}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
+.card{background:var(--cream);border:1px solid var(--line);border-radius:14px;padding:16px;min-width:0}
+.card p{color:var(--muted);font-size:14px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.stat{background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.stat b{display:block;font-size:26px;letter-spacing:-.8px;font-weight:700;font-variant-numeric:tabular-nums}
+.stat span{font-size:13px;color:var(--muted)}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:14px}
+th{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);background:var(--bg-alt);white-space:nowrap}
+td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+tr.row{cursor:pointer} tr.row:hover td{background:var(--cream)}
+.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.mono{font-family:var(--mono);font-size:13px}
+.bar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--pill);min-width:90px}
+.bar i{display:block;height:100%} .bar .s{background:var(--accent)} .bar .p{background:var(--border-strong)}
+.chip{display:inline-block;font-size:12px;font-weight:600;border-radius:999px;padding:2px 10px;white-space:nowrap}
+.chip.ok{background:var(--teal-soft);color:var(--teal-deep)}
+.chip.gap{background:var(--rust-soft);color:var(--rust)}
+.chip.jud{background:var(--pill);color:var(--lead)}
+.chip.inf{background:#fff;border:1px dashed var(--border-strong);color:var(--lead)}
+.two{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:20px}
+.list{display:flex;flex-direction:column;gap:10px}
+.fr{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--card);display:flex;flex-direction:column;gap:6px}
+.fr .t{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.fr .id{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.fr .ac{font-size:13px;color:var(--muted)}
+.mini{all:unset;cursor:pointer;font-size:12px;font-weight:600;color:var(--teal-deep);border:1px solid var(--teal-deep);border-radius:999px;padding:2px 10px;white-space:nowrap}
+.mini:hover{background:var(--teal-soft)}
+.mini.done{background:var(--teal-soft);cursor:default}
+.hard{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--card)}
+.hard.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.chk{all:unset;cursor:pointer;width:22px;height:22px;border-radius:6px;border:1.5px solid var(--border-strong);display:grid;place-items:center;color:#fff;font-size:14px;font-weight:700;margin-top:2px;box-sizing:border-box}
+.hard.on .chk{background:var(--accent);border-color:var(--accent)}
+.proofgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+.proofgrid div{font-size:13px;border-radius:8px;padding:8px 10px;background:var(--cream);border:1px solid var(--line)}
+.proofgrid b{display:block;font-family:var(--mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;margin-bottom:2px}
+.proofgrid .no b{color:var(--rust)} .proofgrid .yes b{color:var(--teal-deep)}
+.meta{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--muted)}
+.share{border:1px dashed var(--border-strong);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px;background:var(--bg-alt)}
+.share pre{margin:0;background:var(--dark);color:var(--body-on-dark);border-radius:10px;padding:12px 14px;font-family:var(--mono);font-size:12px;line-height:1.6;overflow-x:auto}
+.share label{display:flex;gap:8px;align-items:center;font-size:14px}
+.pack{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px}
+.pack div{font-family:var(--mono);font-size:12px;background:var(--cream);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.empty{border:1px dashed var(--border-strong);border-radius:12px;padding:20px;color:var(--muted)}
+.compare td:nth-child(3){font-weight:600;color:var(--teal-deep)}
+.toast{font-size:14px;color:var(--teal-deep);font-weight:600}
+@media (max-width:820px){
+  .body{grid-template-columns:minmax(0,1fr)}
+  nav{flex-direction:row;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line)}
+  nav button{white-space:nowrap}
+  .two{grid-template-columns:minmax(0,1fr)}
+  .view{padding:16px}
+}
+@media (prefers-reduced-motion:no-preference){ .hard,.btn,.chk{transition:background .15s,border-color .15s} }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Concept mockup · example data</div>
+    <h1>Shipwright Skill Check</h1>
+    <p class="lead">A local app that reads your skills, shows what each one really does, and turns the gaps into a hardening plan you approve step by step.</p>
+  </header>
+  <div class="note"><span>All skills, numbers and results on this page are made-up examples. Nothing is read from a real machine, and nothing is sent anywhere. The data format (sections with anchors and hashes, classes, targets, truth table, subprocess map) and the limits follow the Shipwright changelog pilot and <span class="mono">shared/config/conventions.json</span>. Click through the five steps on the left.</span></div>
+  <div class="card"><div class="eyebrow">README, not part of the app</div><h3>Install and start</h3><p style="margin-bottom:10px">Two lines. The app starts after the second one and opens with the explanation below.</p><div class="term"><span class="d">$</span> <span class="c">npx @svenroth-ai/skill-check</span> <span class="d">&nbsp;# once: adds the plugin to Claude Code</span><br><span class="d">&gt;</span> <span class="c">/skill-check</span> <span class="d">&nbsp;# in Claude Code: starts the app beside the chat</span></div></div>
+
+  <div class="app">
+    <div class="topbar">
+      <span class="url">http://localhost:3920</span>
+      <span class="local">Runs locally. Nothing leaves this machine unless you share a report.</span>
+    </div>
+    <div class="body">
+      <nav aria-label="Steps">
+        <button data-v="start"><span>1 Start</span><span class="tag">Free</span></button>
+        <button data-v="inventory"><span>2 Inventory</span><span class="tag">Free</span></button>
+        <button data-v="analysis"><span>3 Analysis</span><span class="tag">Free</span></button>
+        <button data-v="hardening"><span>4 Hardening plan</span><span class="tag">Free</span></button>
+        <button data-v="proof"><span>5 Rebuild and proof</span><span class="tag pro">Shipwright</span></button>
+      </nav>
+
+      <main>
+        <!-- START -->
+        <section class="view" id="v-start">
+          <div class="head"><div class="eyebrow">Why this exists</div><h2>A skill should do what you wrote, every time</h2><p>Most skills are instructions in plain text. Claude reads them and usually follows them, but nothing makes it. This tool shows you where that is a risk and how to close it.</p></div>
+          <div class="cards">
+            <div class="card"><h3>It does what you decided</h3><p>A rule written in text is a request. A rule run as a check is a fact. The check shows which of your rules are which.</p></div>
+            <div class="card"><h3>No shortcuts</h3><p>Under time pressure a model can skip a step or shorten it. A check in code cannot be skipped.</p></div>
+            <div class="card"><h3>Predictable results</h3><p>The same input should give the same behavior. A recorded baseline of what the skill does today lets you prove that a change did not alter it.</p></div>
+            <div class="card"><h3>In line with Anthropic's guidance</h3><p>Anthropic's skill authoring guidance recommends scripts for steps that must be exact, and text only where judgment is needed. This tool measures your skills against that.</p></div>
+          </div>
+          <div class="head"><div class="eyebrow">Step 1</div><h2>Your first scan</h2><p>Press scan and the app reads your skills on this machine. The inventory appears within seconds. The chat only gets one sentence and a link.</p></div>
+<div class="term"><span class="d">$</span> <span class="c">/skill-check</span><br>
+<span class="d">scanning</span> ~/.claude/skills, 3 plugins, project .claude/<br>
+<span class="m">found</span> 24 skills, 6 agents, 2 CLAUDE.md files<br>
+<span class="m">checks</span> parse, sections, scripts, tokens, trigger overlap, limits <span class="d">(no model calls)</span><br>
+<span class="m">limits</span> read from conventions.json (skill_authoring), not built in<br>
+<span class="m">wrote</span> check/inventory.json, truth_table.json, subprocess_map.json <span class="d">(schema 1)</span><br>
+<span class="m">ready</span> http://localhost:3920</div>
+          <div class="cards">
+            <div class="card"><h3>Scripts first</h3><p>Parsing, token counts, trigger overlap and rule classification run as plain scripts. A model only words the requirements and settles unclear cases.</p></div>
+            <div class="card"><h3>Everything stays local</h3><p>Results are saved as JSON files in a data folder on your machine. You can open them without the app.</p></div>
+            <div class="card"><h3>You approve each change</h3><p>The app proposes. Every hardening step needs your click before anything is rebuilt.</p></div>
+            <div class="card"><h3>Same files as Shipwright</h3><p>The three data files use the format of the Shipwright skill rebuilds, so a Shipwright run can start from them without conversion. Without Shipwright they are still readable JSON.</p></div>
+          </div>
+          <div class="actions"><button class="btn" data-go="inventory">Scan my skills</button></div>
+        </section>
+
+        <!-- INVENTORY -->
+        <section class="view" id="v-inventory" hidden>
+          <div class="head"><div class="eyebrow">Step 2</div><h2>Inventory</h2><p>Every skill in one place: what it is for, how much of it is code, and what it costs in every session.</p></div>
+          <div class="stats">
+            <div class="stat"><b>24</b><span>skills found</span></div>
+            <div class="stat"><b>14,200</b><span>tokens loaded every session</span></div>
+            <div class="stat"><b>31%</b><span>average enforcement ratio</span></div>
+            <div class="stat"><b>3</b><span>overlapping skill pairs</span></div>
+          </div>
+          <div class="scroll"><table>
+            <thead><tr><th>Skill</th><th>Scope</th><th>Purpose</th><th>Script / prose</th><th>Tokens</th><th>Last used</th><th>Flag</th></tr></thead>
+            <tbody>
+              <tr class="row" tabindex="0" data-go="analysis"><td class="mono">contract-review</td><td>user</td><td>Reviews contracts and flags risky clauses</td><td><div class="bar" title="22% enforced"><i class="s" style="width:22%"></i><i class="p" style="width:78%"></i></div></td><td class="num">1,840</td><td>2 days ago</td><td><span class="chip gap">7 rules only prose</span></td></tr>
+              <tr class="row" tabindex="0" data-go="analysis"><td class="mono">meeting-notes</td><td>user</td><td>Turns a transcript into minutes and actions</td><td><div class="bar"><i class="s" style="width:10%"></i><i class="p" style="width:90%"></i></div></td><td class="num">1,120</td><td>today</td><td><span class="chip gap">overlap 71%</span></td></tr>
+              <tr class="row" tabindex="0" data-go="analysis"><td class="mono">weekly-report</td><td>user</td><td>Builds the weekly status report</td><td><div class="bar"><i class="s" style="width:15%"></i><i class="p" style="width:85%"></i></div></td><td class="num">980</td><td>5 days ago</td><td><span class="chip gap">overlap 71%</span></td></tr>
+              <tr class="row" tabindex="0" data-go="analysis"><td class="mono">dwh-load-check</td><td>project</td><td>Checks a data warehouse load against the spec</td><td><div class="bar"><i class="s" style="width:64%"></i><i class="p" style="width:36%"></i></div></td><td class="num">760</td><td>yesterday</td><td><span class="chip ok">mostly enforced</span></td></tr>
+              <tr class="row" tabindex="0" data-go="analysis"><td class="mono">crm-followup</td><td>plugin</td><td>Drafts follow-ups from CRM notes</td><td><div class="bar"><i class="s" style="width:8%"></i><i class="p" style="width:92%"></i></div></td><td class="num">1,350</td><td>12 days ago</td><td><span class="chip gap">rarely used</span></td></tr>
+              <tr class="row" tabindex="0" data-go="analysis"><td class="mono">clause-check</td><td>user</td><td>Compares a clause against the playbook</td><td><div class="bar"><i class="s" style="width:18%"></i><i class="p" style="width:82%"></i></div></td><td class="num">640</td><td>3 days ago</td><td><span class="chip gap">overlap 64%</span></td></tr>
+              <tr class="row" tabindex="0" data-go="analysis"><td class="mono">invoice-intake</td><td>project</td><td>Extracts invoice fields into a sheet</td><td><div class="bar"><i class="s" style="width:72%"></i><i class="p" style="width:28%"></i></div></td><td class="num">520</td><td>today</td><td><span class="chip ok">mostly enforced</span></td></tr>
+              <tr class="row" tabindex="0" data-go="analysis"><td class="mono">release-notes</td><td>user</td><td>Writes release notes from commits</td><td><div class="bar"><i class="s" style="width:25%"></i><i class="p" style="width:75%"></i></div></td><td class="num">410</td><td>9 days ago</td><td><span class="chip jud">fine as prose</span></td></tr>
+            </tbody>
+          </table></div>
+          <p class="mono" style="color:var(--muted)">Showing 8 of 24 skills. Click a row to open its analysis.</p>
+          <div class="card">
+            <h3>Overlap map</h3>
+            <p><span class="mono">meeting-notes</span> and <span class="mono">weekly-report</span> compete for the same trigger words (71% similar descriptions). <span class="mono">contract-review</span> and <span class="mono">clause-check</span> overlap by 64%. A third pair is in the full report.</p>
+          </div>
+          <div class="card">
+            <h3>Limits check</h3>
+            <p style="margin-bottom:10px">Measured against the limits in <span class="mono">conventions.json</span> (section <span class="mono">skill_authoring</span>), which come from Anthropic's skill authoring guidance. The app reads the file, so a changed limit needs no app update.</p>
+            <div class="scroll"><table>
+              <thead><tr><th>Skill</th><th>Limit</th><th>Found</th><th>Kind</th></tr></thead>
+              <tbody>
+                <tr><td class="mono">crm-followup</td><td class="mono">description-max-length 1,024</td><td class="num">1,130 chars</td><td><span class="chip gap">hard</span></td></tr>
+                <tr><td class="mono">meeting-notes</td><td class="mono">body-max-lines 500</td><td class="num">540 lines</td><td><span class="chip jud">recommended</span></td></tr>
+                <tr><td class="mono">weekly-report</td><td class="mono">reference-toc-threshold 100</td><td class="num">1 file without contents list</td><td><span class="chip jud">recommended</span></td></tr>
+                <tr><td class="mono">all skills</td><td class="mono">post-compaction-skill-cap 5,000 tokens</td><td class="num">0 above</td><td><span class="chip inf">unverified</span></td></tr>
+              </tbody>
+            </table></div>
+            <p class="mono" style="color:var(--muted);margin-top:8px">Limits marked unverified come second-hand and are shown for information only, never as a finding.</p>
+          </div>
+          <div class="share" id="share">
+            <h3>Share this report with the author</h3>
+            <p style="font-size:14px;color:var(--muted)">Optional. Only counts and categories are sent, never skill text. This is exactly what would leave your machine:</p>
+<pre>{
+  "skills": 24, "agents": 6,
+  "sections_by_class": { "mechanic": 83, "judgement": 17, "ask": 9, "reference": 120, "rationale": 31, "method": 8, "mixed": 14 },
+  "mechanic_with_gate": 31,
+  "limit_findings": { "hard": 1, "recommended": 12 },
+  "overlap_pairs": 3,
+  "tokens_always_on": 14200
+}</pre>
+            <label><input type="checkbox" id="optin"> I have read the data above and agree to send it</label>
+            <div class="actions"><button class="btn ghost" id="sendbtn" disabled>Share report</button><span class="toast" id="toast" hidden>Example only. Nothing was sent.</span></div>
+          </div>
+        </section>
+
+        <!-- ANALYSIS -->
+        <section class="view" id="v-analysis" hidden>
+          <div class="head"><div class="eyebrow">Step 3</div><h2 class="mono" style="font-family:var(--mono);letter-spacing:-.3px">contract-review</h2>
+            <div class="meta"><span>user scope</span><span>1,840 tokens per session</span><span>18 sections, 14 with instructions</span><span>last used 2 days ago</span></div></div>
+          <div class="stats">
+            <div class="stat"><b>22%</b><span>enforcement ratio (2 of 9 checkable rules)</span></div>
+            <div class="stat"><b>7</b><span>rules that could be enforced but are only prose</span></div>
+            <div class="stat"><b>5</b><span>rules that need judgment</span></div>
+          </div>
+          <div class="two">
+            <div>
+              <h3>Every section, classified</h3>
+              <p style="font-size:13px;color:var(--muted);margin-bottom:10px">One row per heading section of <span class="mono">SKILL.md</span> and its reference files. The anchor is file, heading path and a content hash, so a later edit is noticed. Class and target use the Shipwright vocabulary.</p>
+              <div class="scroll"><table>
+                <thead><tr><th>Section</th><th>Hash</th><th>Class</th><th>Target</th><th>Counts as</th></tr></thead>
+                <tbody>
+                  <tr><td>SKILL.md &gt; Purpose</td><td class="mono">92dfee90</td><td class="mono">reference</td><td class="mono">keep</td><td>not counted</td></tr>
+                  <tr><td>SKILL.md &gt; Rules &gt; Never send contract text to external services</td><td class="mono">a21537b7</td><td class="mono">mechanic</td><td class="mono">hook:deny-network</td><td><span class="chip gap">prose only</span></td></tr>
+                  <tr><td>SKILL.md &gt; Rules &gt; Write the review to reviews/date-name.md</td><td class="mono">c433be17</td><td class="mono">mechanic</td><td class="mono">cli:save-review</td><td><span class="chip gap">prose only</span></td></tr>
+                  <tr><td>SKILL.md &gt; Steps &gt; Run clause-extract.py before reading</td><td class="mono">f41a2af1</td><td class="mono">mechanic</td><td class="mono">keep</td><td><span class="chip ok">enforced</span></td></tr>
+                  <tr><td>SKILL.md &gt; Steps &gt; Reject files larger than 20 MB</td><td class="mono">567bf7a8</td><td class="mono">mechanic</td><td class="mono">keep</td><td><span class="chip ok">enforced</span></td></tr>
+                  <tr><td>SKILL.md &gt; Rules &gt; Flag liability caps below CHF 1 million</td><td class="mono">1b90e3c4</td><td class="mono">mechanic</td><td class="mono">cli:check-caps</td><td><span class="chip gap">prose only</span></td></tr>
+                  <tr><td>SKILL.md &gt; Output &gt; Use the red, amber, green scale</td><td class="mono">7d02aa51</td><td class="mono">mechanic</td><td class="mono">cli:check-schema</td><td><span class="chip gap">prose only</span></td></tr>
+                  <tr><td>SKILL.md &gt; Rules &gt; Do not edit the original document</td><td class="mono">e5f6014b</td><td class="mono">mechanic</td><td class="mono">hook:deny-edit</td><td><span class="chip gap">prose only</span></td></tr>
+                  <tr><td>SKILL.md &gt; Output &gt; Keep the summary under 200 words</td><td class="mono">3a9c77d0</td><td class="mono">mechanic</td><td class="mono">hook:word-count</td><td><span class="chip gap">prose only</span></td></tr>
+                  <tr><td>SKILL.md &gt; Output &gt; Cite the clause number for every finding</td><td class="mono">0c48be92</td><td class="mono">mechanic</td><td class="mono">cli:check-citations</td><td><span class="chip gap">prose only</span></td></tr>
+                  <tr><td>SKILL.md &gt; Judgment &gt; Is a termination clause unusual</td><td class="mono">b61d3f08</td><td class="mono">judgement</td><td class="mono">keep</td><td><span class="chip jud">judgment</span></td></tr>
+                  <tr><td>SKILL.md &gt; Judgment &gt; Explain risks in plain language</td><td class="mono">48e7a2cd</td><td class="mono">judgement</td><td class="mono">keep</td><td><span class="chip jud">judgment</span></td></tr>
+                  <tr><td>SKILL.md &gt; Judgment &gt; Prioritize findings by business impact</td><td class="mono">d90b5516</td><td class="mono">judgement</td><td class="mono">keep</td><td><span class="chip jud">judgment</span></td></tr>
+                  <tr><td>SKILL.md &gt; Questions &gt; Governing law is unclear</td><td class="mono">6f13c8a7</td><td class="mono">ask</td><td class="mono">keep</td><td><span class="chip jud">judgment</span></td></tr>
+                  <tr><td>SKILL.md &gt; Questions &gt; Alternative wording only when asked</td><td class="mono">29ae40f3</td><td class="mono">ask</td><td class="mono">keep</td><td><span class="chip jud">judgment</span></td></tr>
+                  <tr><td>SKILL.md &gt; Why this skill exists</td><td class="mono">85c1d7e6</td><td class="mono">rationale</td><td class="mono">adr</td><td>not counted</td></tr>
+                  <tr><td>references/playbook.md &gt; Clause playbook</td><td class="mono">c07a92b1</td><td class="mono">reference</td><td class="mono">keep</td><td>not counted</td></tr>
+                  <tr><td>references/playbook.md &gt; How to read a cap</td><td class="mono">4be8d630</td><td class="mono">method</td><td class="mono">keep</td><td>not counted</td></tr>
+                </tbody>
+              </table></div>
+              <p class="mono" style="color:var(--muted);margin-top:8px">Enforcement ratio = enforced / (enforced + prose only) = 2 / 9.</p>
+
+              <h3 style="margin-top:20px">Behavior baseline (truth table)</h3>
+              <p style="font-size:13px;color:var(--muted);margin-bottom:10px">What the skill does today in each situation, with the line it comes from. The rebuilt skill must reproduce every cell.</p>
+              <div class="scroll"><table>
+                <thead><tr><th>Question</th><th>Guided</th><th>Autonomous</th><th>Unattended</th><th>Source</th></tr></thead>
+                <tbody>
+                  <tr><td>Governing law unclear</td><td class="mono">asks</td><td class="mono">auto-accepts</td><td class="mono">skips</td><td class="mono">SKILL.md:58-61</td></tr>
+                  <tr><td>File larger than 20 MB</td><td class="mono">no-question</td><td class="mono">no-question</td><td class="mono">no-question</td><td class="mono">scripts/intake.py:22</td></tr>
+                  <tr><td>Cap below CHF 1 million</td><td class="mono">no-question</td><td class="mono">no-question</td><td class="mono">no-question</td><td class="mono">SKILL.md:77</td></tr>
+                  <tr><td>Alternative wording</td><td class="mono">asks</td><td><span class="chip gap">contradicted</span></td><td class="mono">skips</td><td class="mono">SKILL.md:93, :41</td></tr>
+                </tbody>
+              </table></div>
+              <p class="mono" style="color:var(--muted);margin-top:8px">One finding: SKILL.md line 93 says ask, line 41 says never ask in autonomous runs.</p>
+
+              <h3 style="margin-top:20px">Calls on the scenario path</h3>
+              <p style="font-size:13px;color:var(--muted);margin-bottom:10px">Every external call the skill makes, and how a test can run without it.</p>
+              <div class="scroll"><table>
+                <thead><tr><th>Call</th><th>Kind</th><th>Plan</th></tr></thead>
+                <tbody>
+                  <tr><td class="mono">python scripts/clause-extract.py</td><td>binary</td><td class="mono">offline</td></tr>
+                  <tr><td class="mono">WebFetch (jurisdiction lookup)</td><td>network</td><td class="mono">seam</td></tr>
+                  <tr><td class="mono">uv run scripts/intake.py</td><td>resolution</td><td class="mono">offline, warm cache only</td></tr>
+                </tbody>
+              </table></div>
+            </div>
+            <div>
+              <h3>Derived requirements</h3>
+              <p style="font-size:13px;color:var(--muted);margin-bottom:10px">Stated means it is written in the skill. Inferred means it was concluded from scripts and behavior, so you confirm it.</p>
+              <div class="list">
+                <div class="fr"><div class="t"><span><span class="id">FR-01</span><br>Every review is saved as a dated file</span><span class="chip ok">stated</span></div><div class="ac">AC: a file matching reviews/YYYY-MM-DD-name.md exists after each run.</div></div>
+                <div class="fr"><div class="t"><span><span class="id">FR-02</span><br>The original contract is never modified</span><span class="chip ok">stated</span></div><div class="ac">AC: any write to contracts/ is blocked and reported.</div></div>
+                <div class="fr"><div class="t"><span><span class="id">FR-03</span><br>Liability caps below CHF 1 million are always flagged</span><span class="chip ok">stated</span></div><div class="ac">AC: a contract with a CHF 500,000 cap yields a red finding.</div></div>
+                <div class="fr"><div class="t"><span><span class="id">FR-04</span><br>Every finding cites a clause number</span><span class="chip inf">inferred</span></div><div class="ac">AC: no finding without a clause reference.</div><div><button class="mini">Confirm</button></div></div>
+                <div class="fr"><div class="t"><span><span class="id">FR-05</span><br>Files over 20 MB are rejected with a clear message</span><span class="chip inf">inferred</span></div><div class="ac">AC: a 25 MB file stops the run before reading.</div><div><button class="mini">Confirm</button></div></div>
+              </div>
+            </div>
+          </div>
+          <div class="actions"><button class="btn" data-go="hardening">See hardening plan</button></div>
+        </section>
+
+        <!-- HARDENING -->
+        <section class="view" id="v-hardening" hidden>
+          <div class="head"><div class="eyebrow">Step 4</div><h2>Hardening plan</h2><p>Five proposals for contract-review. Each one turns a section classed <span class="mono">mechanic</span> into a check and comes with a proof test. Approving sets its target in <span class="mono">inventory.json</span>. Approve what you want.</p></div>
+          <div class="stats">
+            <div class="stat"><b id="h-n">3</b><span>of 5 approved</span></div>
+            <div class="stat"><b id="h-ratio">56%</b><span>enforcement ratio after</span></div>
+            <div class="stat"><b id="h-tok">1,320</b><span>tokens per session after</span></div>
+          </div>
+          <div class="list" id="hlist"></div>
+          <div class="actions"><button class="btn" id="tobuild" data-go="proof">Continue to rebuild</button><span class="local" id="hint"></span></div>
+        </section>
+
+        <!-- PROOF -->
+        <section class="view" id="v-proof" hidden>
+          <div class="head"><div class="eyebrow">Step 5 · with Shipwright</div><h2>Rebuild and proof</h2><p>The original skill, the three check files and your confirmed requirements go into the Shipwright pipeline as the brief. For a single skill this is a short run: requirements are derived, there is no interface to design. Out comes a controlled version with its evidence.</p></div>
+          <div id="proof-empty" class="empty" hidden>Approve at least one change in the hardening plan to see the proof.</div>
+          <div id="proof-body">
+            <div class="stats">
+              <div class="stat"><b id="p-gates">6 of 6</b><span>gate tests pass (blocked and allowed case each)</span></div>
+              <div class="stat"><b>12 of 12</b><span>truth-table cells reproduced</span></div>
+              <div class="stat"><b id="p-tok">1,320</b><span>tokens per session (before 1,840)</span></div>
+              <div class="stat"><b id="p-ratio">56%</b><span>enforcement ratio (before 22%)</span></div>
+            </div>
+            <div class="scroll"><table class="compare">
+              <thead><tr><th>Check</th><th>Original skill</th><th>Controlled version</th></tr></thead>
+              <tbody>
+                <tr><td>Baseline: truth table, 12 cells replayed on 4 sample contracts</td><td>12 of 12 recorded as reference</td><td>12 of 12 reproduced</td></tr>
+                <tr><td>Original document edited by mistake</td><td>possible, only asked in prose</td><td>blocked by hook</td></tr>
+                <tr><td>Liability cap below CHF 1 million</td><td>flagged most of the time</td><td>flagged every time (script)</td></tr>
+                <tr><td>Documentation</td><td>none</td><td>requirements, tests, change log</td></tr>
+              </tbody>
+            </table></div>
+            <div class="head" style="margin-top:6px"><h3>The skill package</h3></div>
+            <div class="pack">
+              <div>skill/contract-review/ (v2)</div>
+              <div>requirements/fr-ac-register.md</div>
+              <div>check/inventory.json, truth_table.json, subprocess_map.json</div>
+              <div>tests/gates/ and baseline-replay.json</div>
+              <div>reports/eval-report.html</div>
+              <div>docs/changelog.md</div>
+              <div>docs/decisions.md</div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var views=["start","inventory","analysis","hardening","proof"];
+  var items=[
+    {t:"Do not edit the original document",m:"PreToolUse hook denies Edit and Write under contracts/",g:"hook:deny-edit",no:"Edit contracts/acme-msa.pdf",yes:"Write reviews/2026-11-14-acme.md",s:140},
+    {t:"Write the review to reviews/date-name.md",m:"File check after each run",g:"cli:save-review",no:"Review saved as notes.txt",yes:"Review saved as reviews/2026-11-14-acme.md",s:90},
+    {t:"Flag liability caps below CHF 1 million",m:"Script check_caps.py runs on the extracted clauses",g:"cli:check-caps",no:"CHF 500,000 cap passes without a flag",yes:"CHF 500,000 cap yields a red finding",s:210},
+    {t:"Keep the summary under 200 words",m:"Stop hook counts words and asks for a rewrite",g:"hook:word-count",no:"260 word summary is accepted",yes:"180 word summary is accepted",s:60},
+    {t:"Never send contract text to external services",m:"Permission rule denies web fetch and network tools",g:"hook:deny-network",no:"WebFetch with contract text",yes:"Read of a local contract file",s:120}
+  ];
+  var on=[true,false,true,false,true];
+  var base=1840, enforced0=2, denom=9;
+  function fmt(n){return String(n).replace(/\B(?=(\d{3})+(?!\d))/g,",");}
+  function esc(s){return String(s).replace(/[&<>]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;"}[c];});}
+  function render(){
+    var h=document.getElementById("hlist"); h.innerHTML="";
+    items.forEach(function(it,i){
+      var d=document.createElement("div"); d.className="hard"+(on[i]?" on":"");
+      d.innerHTML='<button class="chk" aria-pressed="'+on[i]+'" aria-label="Approve proposal '+(i+1)+'">'+(on[i]?"&#10003;":"")+'</button>'+
+        '<div><h3>H'+(i+1)+' · '+esc(it.t)+'</h3><div class="meta"><span>'+esc(it.m)+'</span><span>target <b class="mono">'+esc(it.g)+'</b></span><span>saves about '+it.s+' tokens</span></div>'+
+        '<div class="proofgrid"><div class="no"><b>Blocked case</b>'+esc(it.no)+'</div><div class="yes"><b>Allowed case</b>'+esc(it.yes)+'</div></div></div>';
+      d.querySelector(".chk").addEventListener("click",function(){on[i]=!on[i];render();});
+      h.appendChild(d);
+    });
+    var n=0,sv=0; on.forEach(function(v,i){if(v){n++;sv+=items[i].s;}});
+    var ratio=Math.round((enforced0+n)/denom*100), tok=base-sv;
+    document.getElementById("h-n").textContent=n;
+    document.getElementById("h-ratio").textContent=ratio+"%";
+    document.getElementById("h-tok").textContent=fmt(tok);
+    document.getElementById("p-gates").textContent=(2*n)+" of "+(2*n);
+    document.getElementById("p-tok").textContent=fmt(tok);
+    document.getElementById("p-ratio").textContent=ratio+"%";
+    document.getElementById("tobuild").disabled=(n===0);
+    document.getElementById("hint").textContent=n===0?"Approve at least one change first.":"";
+    document.getElementById("proof-empty").hidden=(n>0);
+    document.getElementById("proof-body").hidden=(n===0);
+  }
+  function show(v){
+    if(views.indexOf(v)<0)v="start";
+    views.forEach(function(x){document.getElementById("v-"+x).hidden=(x!==v);});
+    document.querySelectorAll("nav button").forEach(function(b){b.setAttribute("aria-current",b.dataset.v===v?"true":"false");});
+    try{ if(location.hash.slice(1)!==v) history.replaceState(null,"","#"+v);}catch(e){}
+  }
+  document.querySelectorAll("nav button").forEach(function(b){b.addEventListener("click",function(){show(b.dataset.v);});});
+  document.addEventListener("click",function(e){
+    var g=e.target.closest("[data-go]"); if(g && !g.disabled){show(g.dataset.go);}
+    var m=e.target.closest(".mini"); if(m){m.textContent="Confirmed";m.classList.add("done");
+      var chip=m.closest(".fr").querySelector(".chip.inf"); if(chip){chip.className="chip ok";chip.textContent="confirmed";}}
+  });
+  document.querySelectorAll("tr.row").forEach(function(r){r.addEventListener("keydown",function(e){if(e.key==="Enter"){show(r.dataset.go);}});});
+  var opt=document.getElementById("optin"), send=document.getElementById("sendbtn"), toast=document.getElementById("toast");
+  opt.addEventListener("change",function(){send.disabled=!opt.checked; if(!opt.checked)toast.hidden=true;});
+  send.addEventListener("click",function(){toast.hidden=false;});
+  window.addEventListener("hashchange",function(){show(location.hash.slice(1));});
+  render(); show(location.hash.slice(1)||"start");
+})();
+</script>

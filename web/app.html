@@ -1,0 +1,896 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skill Check UI v10 mockup</title>
+<style>
+/* ---------- tokens: one scale for color, type, space, surfaces ---------- */
+:root{
+  --ink:#1c1917;--body:#3a3631;--muted:#4f4943;
+  --teal:#0e7a6b;--teal-d:#0a5a4f;--tealbg:#d4ebe5;
+  --green:#177a42;--green-d:#0f5f33;--greenbg:#dcf3e4;
+  --orange:#c8531a;--orange-d:#6f2c08;--orangebg:#fde6d4;
+  --taupe:#2c261d;
+  --fs-xs:13px;--fs-s:15px;--fs-m:17px;--fs-l:22px;--fs-xl:clamp(30px,5.2cqw,42px);
+  --s1:8px;--s2:16px;--s3:24px;--s4:40px;
+  --pad:20px;--radius:16px;
+  --hair:rgba(40,30,15,.2);--card-line:#cfc9bb;
+  --card-sh:0 1px 2px rgba(40,30,15,.12),0 10px 22px -10px rgba(40,30,15,.38);
+  --mono:ui-monospace,Consolas,monospace;
+  /* the same glass recipe as the Shipwright Command Center */
+  --glass-light:linear-gradient(122deg,rgba(255,255,255,.95) 0%,rgba(255,255,255,.7) 42%,rgba(255,255,255,.66) 64%,rgba(255,255,255,.94) 100%);
+  --glass-line:rgba(255,255,255,.82);--glass-filter:blur(20px) saturate(1.3) brightness(1.4);
+  --glass-dark:rgba(30,26,20,.74);--glass-dark-line:rgba(255,255,255,.22);
+  --sh:inset 0 1px 0 rgba(255,255,255,.12),0 2px 8px rgba(0,0,0,.2),0 16px 40px -12px rgba(0,0,0,.4);
+  --ease:cubic-bezier(.22,1,.36,1)}
+*{box-sizing:border-box}
+html{background:var(--taupe)}
+body{margin:0;color:var(--ink);font:var(--fs-m)/1.55 Inter,system-ui,-apple-system,Segoe UI,sans-serif;font-variant-numeric:tabular-nums;-webkit-text-size-adjust:100%;min-height:100vh}
+a{color:inherit;text-decoration:none}button{font-family:inherit}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.skip{position:absolute;left:-999px;top:8px;background:#fff;color:#000;padding:10px 14px;border-radius:8px;z-index:50}.skip:focus{left:8px}
+:focus-visible{outline:3px solid #fff;outline-offset:2px;box-shadow:0 0 0 6px var(--teal)}
+
+/* ---------- the frozen photo and the page ---------- */
+.scene{position:fixed;inset:0;z-index:-1;background:var(--taupe);overflow:hidden}
+.scene img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:saturate(.92) contrast(1.02) brightness(1.04)}
+.scene::after{content:"";position:absolute;inset:0;background:
+  linear-gradient(180deg,rgba(44,38,29,.5) 0,rgba(44,38,29,.24) 110px,rgba(44,38,29,0) 300px),
+  linear-gradient(180deg,rgba(44,38,29,.26) 0%,rgba(44,38,29,.2) 55%,rgba(44,38,29,.38) 100%)}
+.wrap{max-width:1080px;margin:0 auto;padding:20px 16px 72px}
+.top{color:#fff;background:var(--glass-dark);border:1px solid var(--glass-dark-line);box-shadow:var(--sh);
+  -webkit-backdrop-filter:blur(22px) saturate(1.2);backdrop-filter:blur(22px) saturate(1.2);border-radius:22px;padding:clamp(20px,4vw,32px);margin:0 0 var(--s2)}
+.top .eyebrow{color:#9ff0da}
+.page{container-type:inline-size;background:var(--glass-light);border:1px solid var(--glass-line);box-shadow:var(--sh);
+  -webkit-backdrop-filter:var(--glass-filter);backdrop-filter:var(--glass-filter);border-radius:22px;padding:clamp(20px,4vw,40px)}
+
+/* ---------- type ---------- */
+.eyebrow{font:700 var(--fs-xs)/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--orange-d);margin:0 0 var(--s1)}
+h1{font-size:clamp(32px,6vw,48px);line-height:1.05;letter-spacing:-.03em;margin:var(--s1) 0}
+.lead{color:#eef4f2;max-width:58ch;margin:0 0 var(--s3);font-size:var(--fs-m)}
+h2{font-size:var(--fs-xl);line-height:1.1;letter-spacing:-.025em;margin:0 0 12px;text-wrap:balance}
+h3{font-size:var(--fs-l);line-height:1.25;letter-spacing:-.01em;margin:var(--s4) 0 12px}
+.sub{color:var(--body);max-width:64ch;margin:0 0 var(--s3);text-wrap:pretty}
+.sub.tight{margin-bottom:var(--s2)}
+.note{font-size:var(--fs-s);color:var(--muted)}
+.legend{font-size:var(--fs-s);color:var(--body);margin:var(--s2) 0 0;max-width:70ch}
+.mono{font:700 var(--fs-xs)/1.3 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.back{display:inline-flex;align-items:center;min-height:44px;gap:6px;color:var(--teal-d);font-weight:700;font-size:var(--fs-s);transition:transform 160ms var(--ease)}
+.back:hover{transform:translateX(-3px)}
+.link{color:var(--teal-d);font-weight:700;text-decoration:underline;text-underline-offset:3px}
+
+/* ---------- navigation: the process is the navigation ---------- */
+.steps{list-style:none;margin:0;padding:0;display:flex;gap:var(--s1);flex-wrap:wrap}
+.steps li{display:flex}
+.steps a{display:flex;align-items:center;gap:10px;min-height:48px;padding:6px 18px 6px 8px;border-radius:999px;font-size:var(--fs-s);font-weight:600;color:#fff;
+  background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.5);transition:background 180ms var(--ease),transform 160ms var(--ease)}
+.steps a:hover{background:rgba(255,255,255,.24)}
+.steps a:active{transform:scale(.97)}
+.steps .n{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;border:2px solid rgba(255,255,255,.85);font-size:var(--fs-xs);font-weight:700;flex:none}
+.steps .t{white-space:nowrap}
+.steps .done a{background:rgba(23,122,66,.4);border-color:#7fe3a6}
+.steps .done .n{background:var(--green);border-color:var(--green)}
+.steps .optional a{border-style:dashed}
+.steps .on a{background:#fff;color:var(--ink);border-color:#fff;font-weight:700}
+.steps .on .n{background:var(--teal);border-color:var(--teal);color:#fff}
+.sub-steps{list-style:none;display:flex;gap:var(--s1);flex-wrap:wrap;margin:0 0 var(--s3);padding:0}
+.sub-steps a{display:flex;align-items:center;gap:var(--s1);min-height:44px;padding:6px 16px 6px 8px;border-radius:12px;background:#fff;border:1px solid var(--card-line);color:var(--body);font-weight:600;font-size:var(--fs-s);box-shadow:var(--card-sh)}
+.sub-steps .sn{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:#e9e5da;font-size:var(--fs-xs);font-weight:700}
+.sub-steps .on a{border-color:var(--teal);color:var(--ink);box-shadow:0 0 0 2px var(--teal)}
+.sub-steps .on .sn{background:var(--teal);color:#fff}
+.sub-steps .ok .sn{background:var(--green);color:#fff}
+.sub-steps .optional a{border-style:dashed}
+.sub-steps .hint{font-size:var(--fs-xs);color:var(--muted);font-weight:600}
+
+/* ---------- views ---------- */
+.view{display:none}
+.view.on{display:block;animation:enter 320ms var(--ease) both}
+.view:focus,h2:focus,h2:focus-visible{outline:none;box-shadow:none}
+@keyframes enter{from{opacity:0;transform:translateY(10px);filter:blur(2px)}to{opacity:1;transform:none;filter:none}}
+
+/* ---------- buttons ---------- */
+.btn{appearance:none;border:0;cursor:pointer;font-family:inherit;font-weight:700;font-size:var(--fs-m);line-height:1.1;color:#fff;background:var(--teal);border-radius:12px;min-height:48px;padding:15px 22px;
+  transition:transform 160ms var(--ease),background 160ms var(--ease);display:inline-flex;align-items:center;justify-content:center;text-align:center}
+.btn:hover{background:#0b695c}.btn:active{transform:scale(.97)}
+.btn.big{font-size:18px;min-height:56px;padding:18px 30px;border-radius:14px}
+.btn.light{background:#fff;color:#0a2f29}.btn.light:hover{background:#e6f6f2}
+.btn.alt{background:#fff;color:var(--teal-d);border:2px solid var(--teal)}.btn.alt:hover{background:#e6f6f2}
+
+/* ---------- surfaces: one card recipe, and dark call-to-action bands with a moving glow ---------- */
+.card{background:#fff;border:1px solid var(--card-line);border-radius:var(--radius);box-shadow:var(--card-sh);padding:var(--pad)}
+.band{position:relative;overflow:hidden;display:flex;gap:20px;align-items:center;flex-wrap:wrap;color:#fff;background:#0d2a25;border-radius:var(--radius);padding:var(--pad) var(--s3);
+  box-shadow:0 14px 30px -14px rgba(14,47,41,.8);--mx:80%;--my:0%}
+.band[hidden]{display:none}
+.band::before{content:"";position:absolute;inset:0;background:radial-gradient(420px 220px at var(--mx) var(--my),rgba(95,211,187,.32),transparent 65%)}
+.band>*{position:relative}.band .body{flex:1;min-width:230px}
+.band p{margin:4px 0 0;font-size:18px;line-height:1.45;max-width:52ch}
+.band .eyebrow{color:#9ff0da}
+
+/* ---------- welcome ---------- */
+.pull{margin:0 0 var(--s2);font-size:clamp(26px,5.4cqw,42px);line-height:1.15;letter-spacing:-.025em;font-style:italic;font-weight:600;max-width:24ch;text-wrap:balance}
+.log{font:var(--fs-s)/1.9 var(--mono);margin:0}
+.log span{display:inline-block;min-width:150px;margin-right:12px;color:var(--muted);text-transform:uppercase;font-size:var(--fs-xs);letter-spacing:.06em}
+.ladder{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--hair);border-bottom:1px solid var(--hair)}
+.ladder li{display:flex;gap:14px;align-items:flex-start;padding:var(--s3) var(--s2);border-left:1px solid var(--hair)}
+.ladder li:first-child{border-left:0;padding-left:0}
+.ladder li.here{background:rgba(14,122,107,.08)}
+.stair{flex:none;display:flex;align-items:flex-end;gap:3px;height:30px;width:32px;margin-top:2px}
+.stair i{display:block;width:8px;border-radius:2px;background:#cfc9bb}.stair i.f{background:var(--teal)}
+.ladder b{display:block;font-size:var(--fs-l);line-height:1.2}.ladder .d{display:block;color:var(--body);font-size:var(--fs-s);line-height:1.45;margin-top:4px}
+.ladder .you{display:block;margin-top:6px;font-size:var(--fs-xs);font-weight:700;color:var(--teal-d)}
+.tools{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:var(--s4)}
+.tools li{display:flex;flex-direction:column;align-items:flex-start;gap:4px;border-top:1px solid var(--hair);padding-top:var(--s3)}
+.ic{width:56px;height:56px;border-radius:16px;display:grid;place-items:center;background:#fff;border:1px solid var(--card-line);margin-bottom:10px;box-shadow:var(--card-sh)}
+.tools b{font-size:var(--fs-l);line-height:1.25}.tools .d{color:var(--body)}
+.tools code{margin-top:10px;font:600 var(--fs-s)/1 var(--mono);background:#1f2a28;color:#bff3e4;border-radius:8px;padding:9px 12px}
+.startrow{display:flex;gap:var(--s2);align-items:center;flex-wrap:wrap;margin-top:var(--s4)}
+
+/* ---------- lists: skills, parts, report ---------- */
+.listhead{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:6px;margin:var(--s4) 0 12px}
+.listhead h3{margin:0}
+.tw{background:#fff;border:1px solid var(--card-line);border-radius:var(--radius);overflow:hidden;box-shadow:var(--card-sh)}
+table{width:100%;border-collapse:collapse}
+th{font:600 var(--fs-xs)/1.3 var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);text-align:left;padding:12px var(--s2);background:#f1eee6;border-bottom:1px solid #d9d4c8;vertical-align:bottom}
+td{padding:15px var(--s2);border-bottom:1px solid #e9e5da;vertical-align:middle}
+tbody tr:last-child td{border-bottom:0}
+td.n,th.n{text-align:right}
+tr.row{position:relative}
+td.go{width:44px;text-align:right;color:var(--muted)}
+td.name{font-weight:700}
+.rowlink::after{content:"";position:absolute;inset:0}
+.rowlink:focus-visible{outline:none;box-shadow:none}
+.rowlink:focus-visible::after{outline:3px solid var(--teal);outline-offset:-3px;border-radius:6px}
+tr.row:has(.rowlink):hover td{background:#f3faf8}
+tr.row:has(.rowlink):hover .chev{transform:translateX(3px);color:var(--teal-d)}
+.chev{display:inline-block;transition:transform 200ms var(--ease)}
+.big{font-weight:700;font-size:18px}.pot{color:var(--orange-d)}.now{color:var(--green-d)}
+.pill{display:inline-block;border-radius:20px;padding:3px 11px;font-size:var(--fs-xs);font-weight:700;white-space:nowrap}
+.pill.ok{background:var(--tealbg);color:var(--teal-d)}.pill.todo{background:var(--orangebg);color:var(--orange-d)}
+.pill.done{background:var(--greenbg);color:var(--green-d)}.pill.txt{background:#ebe8df;color:#4a443c}
+td.name .pill{display:none}
+tr.total td{background:#f7f5ef;font-weight:700}
+
+/* ---------- check and report numbers: one card, hairlines between the numbers ---------- */
+.summary{display:grid;gap:var(--s3)}
+.stats{display:grid;grid-template-columns:1.7fr 1.2fr 1fr 1fr 1fr}
+.stats.three{grid-template-columns:2fr 1fr 1fr}
+.stats>div{padding:0 var(--s2);border-left:1px solid var(--hair);display:flex;flex-direction:column;justify-content:flex-end}
+.stats>div:first-child{border-left:0;padding-left:0}
+.stats .num{font-size:30px;font-weight:700;line-height:1.1;letter-spacing:-.02em}
+.stats .cap{font-size:var(--fs-s);line-height:1.35;color:var(--body);margin-top:6px}
+.stats .main .num{font-size:clamp(46px,9cqw,68px);letter-spacing:-.04em;color:var(--orange-d)}
+.stats .main .cap{font-weight:700;color:var(--orange-d)}
+.stats .two .num{font-size:clamp(32px,5cqw,44px);color:var(--green-d)}
+.stats .two .cap{font-weight:700;color:var(--green-d)}
+.bar{display:flex;height:22px;border-radius:11px;overflow:hidden;background:#e2ded2;box-shadow:inset 0 1px 2px rgba(0,0,0,.12)}
+.bar i{display:block;height:100%;width:0;transition:width 1000ms var(--ease)}
+.bar .g{background:#8fd0aa}.bar .o{background:#f2bd9b}.bar .s{background:repeating-linear-gradient(135deg,#d8d3c7 0 6px,#ebe8df 6px 12px)}
+.key{list-style:none;display:flex;flex-wrap:wrap;gap:10px 26px;margin:14px 0 0;padding:0;font-size:var(--fs-m)}
+.key li{display:flex;gap:8px;align-items:flex-start}
+.sw{width:14px;height:14px;border-radius:4px;margin-top:5px;flex:none}
+.claim{margin:14px 0 0}.claim b{color:var(--orange-d)}
+details{margin-top:var(--s2);color:var(--body)}summary{cursor:pointer;font-weight:700;padding:10px 0;min-height:44px}
+
+/* ---------- buy page ---------- */
+.buygrid{display:grid;grid-template-columns:1.5fr 1fr;gap:28px;align-items:start}
+.pricecard{position:sticky;top:24px;background:#fff;border:2px solid var(--teal);border-radius:20px;padding:var(--s3);box-shadow:0 2px 4px rgba(40,30,15,.12),0 22px 44px -16px rgba(14,47,41,.55)}
+.price{font-size:44px;font-weight:700;letter-spacing:-.03em;line-height:1.1;margin:var(--s1) 0 2px}.price small{font-size:var(--fs-m);font-weight:600;color:var(--muted);letter-spacing:0}
+.pricecard .btn{width:100%;margin:14px 0 var(--s2)}
+.assure,.benefits{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.assure{font-size:var(--fs-s)}
+.assure li,.benefits li{display:flex;gap:10px;align-items:flex-start}
+.tick{flex:none;width:22px;height:22px;border-radius:50%;background:var(--green);color:#fff;display:grid;place-items:center;font-size:var(--fs-xs);font-weight:700;margin-top:2px}
+.benefits{gap:14px}.benefits b{display:block;font-size:18px}.benefits .d{color:var(--body)}
+.ba{display:grid;gap:12px;margin:0 0 var(--s2)}
+.ba .head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start}
+.ba .head b{font-size:18px;line-height:1.3}
+.x2{flex:none;font-size:26px;font-weight:700;letter-spacing:-.02em;color:var(--orange-d);background:var(--orangebg);border-radius:10px;padding:2px 10px}
+.ba .row2{display:grid;grid-template-columns:130px 1fr 48px;gap:12px;align-items:center;font-size:var(--fs-s)}
+.ba .track{height:16px;border-radius:8px;background:#e2ded2;overflow:hidden}.ba .track i{display:block;height:100%;border-radius:8px}
+.ba .v{font-weight:700;text-align:right}
+.steps3{counter-reset:s;list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.steps3 li{counter-increment:s;display:flex;gap:12px}
+.steps3 li::before{content:counter(s);flex:none;width:30px;height:30px;border-radius:50%;background:var(--teal);color:#fff;display:grid;place-items:center;font-weight:700;font-size:var(--fs-s)}
+.steps3 b{display:block}
+.faq details{margin:0;border-top:1px solid var(--hair)}.faq details:last-child{border-bottom:1px solid var(--hair)}
+.faq summary{display:flex;align-items:center}
+.faq details p{margin:0 0 14px}
+
+/* ---------- questions, report, keep control ---------- */
+.q{margin:0 0 12px}
+.q .no{font:600 var(--fs-xs)/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:var(--s1)}
+.q h3{margin:0 0 6px !important;font-size:clamp(19px,3.4cqw,23px)}
+.q p{margin:0 0 12px;color:var(--body)}
+.seg{display:inline-flex;flex-wrap:wrap;background:#e9e5da;border-radius:12px;padding:3px;gap:2px}
+.seg button{border:0;background:none;min-height:44px;padding:9px 18px;border-radius:9px;font-weight:700;font-size:var(--fs-s);color:var(--body);cursor:pointer;transition:all 180ms var(--ease);display:inline-flex;align-items:center;gap:8px}
+.seg button:active{transform:scale(.97)}
+.seg button[aria-pressed=true]{background:#fff;color:var(--teal-d);box-shadow:0 1px 3px rgba(0,0,0,.18)}
+.seg small{font:700 11px/1 var(--mono);letter-spacing:.04em;text-transform:uppercase;color:var(--teal-d);background:var(--tealbg);border-radius:5px;padding:3px 5px}
+.next2{display:grid;grid-template-columns:1fr 1fr;gap:var(--s4);margin-top:var(--s4)}
+.next2>div{border-top:1px solid var(--hair);padding-top:var(--s3);display:flex;flex-direction:column;gap:var(--s1);align-items:flex-start}
+.next2 h3{margin:0}.next2 p{margin:0;color:var(--body)}.next2 .btn{margin-top:var(--s1)}
+
+/* ---------- narrow: the same page as cards ---------- */
+@container (max-width:700px){
+  .stats,.stats.three{grid-template-columns:1fr 1fr;gap:var(--s2) 0}
+  .stats>div{border-left:0;padding:0}.stats>div:nth-child(even){border-left:1px solid var(--hair);padding-left:var(--s2)}
+  .stats .main{grid-column:1/-1;border-left:0!important;padding-left:0!important}
+  .ladder,.tools,.next2,.buygrid{grid-template-columns:1fr}
+  .ladder li{border-left:0;border-top:1px solid var(--hair);padding-left:0}.ladder li:first-child{border-top:0}
+  .pricecard{position:static;order:-1}
+  .log span{display:block;min-width:0;margin:6px 0 0}
+  .tw{background:none;border:0;box-shadow:none;overflow:visible;border-radius:0}
+  table.tbl thead{display:none}
+  table.tbl,table.tbl tbody,table.tbl tr,table.tbl td{display:block;width:100%}
+  table.tbl tr.row{background:#fff;border:1px solid var(--card-line);box-shadow:var(--card-sh);border-radius:var(--radius);margin:0 0 12px;padding:var(--s2);display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;align-items:start}
+  table.tbl tr.row td{border:0;padding:0;text-align:left;width:auto}
+  table.tbl td.name{grid-column:1/-1;font-size:18px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+  table.tbl td.name .pill{display:inline-block;margin-left:auto}
+  table.tbl td[data-label]::before{content:attr(data-label);display:block;font:600 var(--fs-xs)/1.25 var(--mono);letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+  table.tbl td.status,table.tbl td.go{display:none}
+  table.tbl td.wide{grid-column:1/-1}
+  table.tbl.report tr.row{grid-template-columns:1fr 1fr 1fr}
+  table.tbl tr.total td{background:none}
+  table.tbl tr.row:has(.rowlink):hover td{background:none}
+}
+
+/* v10 tweaks: more air, readable evidence lines, icon beside text */
+.view h3{margin-top:56px}
+.view>h3:first-of-type{margin-top:56px}
+.log{margin:var(--s3) 0 0;padding:var(--s2) var(--s3);border-left:4px solid var(--ink);background:rgba(255,255,255,.7);border-radius:0 12px 12px 0;font-size:17px;line-height:2;color:var(--ink)}
+.log span{color:#3a3631;font-weight:700;font-size:var(--fs-xs);min-width:160px}
+.tools li{flex-direction:row;align-items:flex-start;gap:16px}
+.tools li>div{display:flex;flex-direction:column;align-items:flex-start;gap:4px}
+.tools .ic{margin:0;flex:none}
+.startrow{margin-top:56px}
+@container (max-width:700px){.log span{min-width:0}}
+
+.tools{margin-top:var(--s2)}.tools li{border-top:0;padding-top:0}
+.ladder{background:rgba(255,255,255,.82);border:0;border-radius:var(--radius)}
+.ladder li{padding:var(--s3)}
+.ladder li:first-child{padding-left:var(--s3)}
+.ladder li.here{background:rgba(14,122,107,.1)}
+@container (max-width:700px){.ladder li{padding:var(--s2) var(--s3)}.ladder li:first-child{padding-left:var(--s3)}}
+
+.ladder,.log{box-shadow:var(--card-sh)}
+.log{background:rgba(255,255,255,.82)}
+
+#v-check .cta{margin-top:var(--s4)}
+#v-check .cta{margin-bottom:var(--s2)}.view .listhead h3{margin:0}
+/* keep control */
+.flow{list-style:none;margin:var(--s2) 0 var(--s2);padding:0;display:grid;gap:var(--s2)}
+.flow li{display:flex;gap:var(--s2);align-items:flex-start}
+.flow .sn{flex:none;display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:var(--teal);color:#fff;font-weight:700;font-size:var(--fs-s)}
+.flow b{display:block;color:var(--ink)}
+.flow p{margin:2px 0 0;color:var(--body)}
+.outlook{margin:var(--s2) 0 var(--s3);color:var(--body);max-width:62ch}
+.outlook b{color:var(--ink)}
+.ctl{display:grid;gap:var(--s3);margin:var(--s3) 0 0}
+.ctl .card{margin:0}
+.ctl .head{display:flex;align-items:flex-start;gap:var(--s2);margin-bottom:var(--s2)}
+.ctl .head .sn{flex:none;display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:var(--teal);color:#fff;font-weight:700;font-size:var(--fs-s)}
+.ctl .head h3{margin:0 0 4px !important}
+.ctl .head p{margin:0;color:var(--body)}
+.ctl .state{display:none;align-items:center;gap:var(--s1);font-weight:700;color:var(--green-d)}
+.ctl .card.is-done .state{display:flex}
+.ctl .card.is-done .act{display:none}
+.ctl .card.is-done .sn{background:var(--green)}
+.ctl .mini{width:100%;border-collapse:collapse;font-size:var(--fs-s);margin:0 0 var(--s2)}
+.ctl .mini th{font:600 var(--fs-xs)/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding:0 0 10px;border-bottom:1px solid var(--hair)}
+.ctl .mini td{padding:12px 16px 12px 0;border-bottom:1px solid var(--hair);vertical-align:top}
+.ctl .mini td:last-child,.ctl .mini th:last-child{padding-right:0;text-align:right;white-space:nowrap}
+.ctl .more{color:var(--muted);font-size:var(--fs-s);margin:0 0 var(--s2)}
+.ctl .tests{list-style:none;margin:0 0 var(--s2);padding:0;display:grid;gap:var(--s1)}
+.ctl .tests li{display:flex;gap:var(--s2);align-items:baseline;justify-content:space-between;padding:12px 16px;border-radius:12px;background:#f6f4ee;border:1px solid var(--hair)}
+.ctl .tests li span:first-child{color:var(--ink)}
+.ctl .tests .res{display:none}
+.ctl .card.is-done .tests .res{display:inline-block}
+.ctl .card.is-done .tests .pre{display:none}
+.ctl .alert{border-left:4px solid var(--orange-d);background:var(--orangebg);border-radius:12px;padding:var(--s2) var(--s3);margin:0 0 var(--s2)}
+.ctl .alert b{display:block;margin-bottom:4px}
+.ctl .alert p{margin:0;color:var(--body)}
+.ctl .ex{font:600 var(--fs-xs)/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:block;margin:0 0 var(--s1)}
+@media (max-width:700px){.ctl .tests li{flex-direction:column;gap:6px}}
+.ladder li{position:relative}
+.ladder li .d,.ladder li .d{color:#1f1d1a !important}
+.ladder li.done{background:var(--greenbg)}
+.ladder li.here .you{color:var(--green-d)}
+.ladder .stair i{background:#a29c8e}
+.ladder .stair i.f{background:var(--green-d)}
+.ladder li.done .stair i{background:rgba(31,29,26,.3)}
+.ladder li.done .stair i.f{background:var(--green-d)}
+.cross{position:absolute;top:14px;right:14px;width:26px;height:26px;border-radius:50%;background:#b3261e;color:#fff;display:grid;place-items:center;font-size:13px;font-weight:700}
+.tick{position:absolute;top:14px;right:14px;width:26px;height:26px;border-radius:50%;background:var(--green);color:#fff;display:grid;place-items:center;font-size:14px;font-weight:700}
+i[data-agent],i[data-host]{font-style:normal}
+.tools .ic{background:#1f2a28}
+.tools .ic svg{stroke:#bff3e4}
+.band-plain{margin:0}
+.tbl .plugin td{color:var(--muted)}
+.cmp{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.cmp li{display:flex;gap:var(--s2);justify-content:space-between;align-items:baseline;padding:10px 0;border-bottom:1px solid var(--hair)}
+.cmp li:last-child{border-bottom:0}
+.part{margin:0 0 var(--s2)}
+.part .ph{display:flex;justify-content:space-between;gap:var(--s2);align-items:baseline;margin:0 0 var(--s1)}
+.part .ph b{font-size:var(--fs-l)}
+.part .ph span{color:var(--muted);font-size:var(--fs-s)}
+@media(max-width:700px){.cmp li{flex-direction:column;gap:4px}}
+.tools li{position:relative}
+.paid{position:absolute;top:0;right:0;background:var(--orange-d);color:#fff;font:700 var(--fs-xs)/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;border-radius:8px;padding:6px 10px}
+.paid~div .mono{padding-right:64px}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition-duration:1ms!important}}
+@media(max-width:700px){
+  .steps{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+  .steps li{display:block}
+  .steps a{flex-direction:column;justify-content:flex-start;gap:6px;height:100%;padding:10px 4px 8px;border-radius:14px;text-align:center;font-size:var(--fs-xs);line-height:1.2}
+  .steps .t{white-space:normal}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="scene" aria-hidden="true"><img src="/assets/deck-golden.jpg" alt=""></div>
+
+<div class="wrap">
+<header class="top">
+  <div class="eyebrow">Runs on your computer · your skills never leave it</div>
+  <h1><a href="#/">Skill Check</a></h1>
+  <p class="lead">A skill should do what you wrote, every time. See how much of each skill is held by code, and upgrade it step by step.</p>
+  <nav aria-label="Progress">
+    <ol class="steps" id="steps">
+      <li data-step="start"><a href="#/"><span class="n">1</span><span class="t">Start</span><span class="sr" hidden> (done)</span></a></li>
+      <li data-step="skills"><a href="#/skills"><span class="n">2</span><span class="t">Choose a skill</span><span class="sr" hidden> (done)</span></a></li>
+      <li data-step="check"><a id="nav-check" href="#/skills"><span class="n">3</span><span class="t">Check it</span><span class="sr" hidden> (done)</span></a></li>
+      <li data-step="upgrade"><a id="nav-upgrade" href="#/skills"><span class="n">4</span><span class="t">Upgrade it</span><span class="sr" hidden> (done)</span></a></li>
+      <li data-step="control" class="optional"><a id="nav-control" href="#/control"><span class="n">5</span><span class="t">Keep control</span><span class="sr" hidden> (done)</span></a></li>
+    </ol>
+  </nav>
+</header>
+
+<main id="main" class="page">
+
+  <!-- 1. start: why -->
+  <section class="view" id="v-welcome" data-title="Start">
+    <div class="eyebrow">Sound familiar?</div>
+    <blockquote class="pull">“It has never done that before. Why didn't it follow my skill?”</blockquote>
+    <h2 tabindex="-1">Because a skill is only a request. Nothing makes the AI follow it.</h2>
+    <p class="sub tight">A skill is a text file with instructions. The AI reads it and does its best. Even a careful skill is still just text: if the AI skips an instruction, nothing stops it and nothing tells you.</p>
+    <p class="log"><span>Your skill says</span>Always ask before uploading.<br><span>Tuesday, 4:12 pm</span>Uploaded. Nobody asked you.</p>
+
+    <h3>The fix: let code hold the instructions</h3>
+    <p class="sub tight">An instruction that code can hold is checked by code, every time, whatever the AI decides. Instructions that need your judgment stay text, and you see which is which. That gives every skill a level of control:</p>
+    <ol class="ladder" id="start-ladder" aria-label="Three levels of control"></ol>
+
+    <h3>Two tools take you up the ladder</h3>
+    <ul class="tools">
+      <li><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#0e7a6b" stroke-width="2.2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6"/><path d="M15.2 15.2L20 20"/></svg></span>
+        <div><span class="mono">Free</span><b>Skill Check</b><span class="d">Reads your skills and shows the level of each one: how much is held by code and how much is only written.</span><code>/skill-check</code></div></li>
+      <li><span class="paid">Paid</span><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#b8481a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg></span>
+        <div><span class="mono">Paid · once · all your skills</span><b>Skill Upgrade</b><span class="d">Takes a skill up the ladder. It writes the checks for you, asks only what it cannot work out, and shows the proof. The last step, keeping control, is optional.</span><code>/skill-upgrade</code></div></li>
+    </ul>
+    <div class="startrow"><a class="btn big" href="#/skills">Start: choose a skill</a><span class="note">About a minute. Nothing leaves your computer.</span></div>
+  </section>
+
+  <!-- 2. choose a skill -->
+  <section class="view" id="v-skills" data-title="Choose a skill">
+    <h2 tabindex="-1">Start with one skill</h2>
+    <p class="sub">Pick the skill you rely on most. You can come back and do the others later.</p>
+    <div class="band" id="suggest" hidden></div>
+    <p id="skills-state" class="sub" role="status">Reading your skills...</p>
+    <div class="listhead" id="listhead" hidden><h3>All your skills</h3><span class="note">Select a skill to open it.</span></div>
+    <div class="tw" id="skills-table" hidden><table class="tbl">
+      <thead><tr><th scope="col">Skill</th><th scope="col" class="n">Used, last 90 days</th><th scope="col" class="n">Enforced today</th><th scope="col" class="n">Can be enforced</th><th scope="col">Status</th><th scope="col"><span class="sr">Open</span></th></tr></thead>
+      <tbody id="skill-rows"></tbody>
+    </table></div>
+    <p class="legend"><b>Enforced today</b>: how much of what you wrote is already held by code. <b>Can be enforced</b>: the most that code can hold at all. The rest needs your judgment and stays text.</p>
+  </section>
+
+  <!-- 3. check it -->
+  <section class="view" id="v-check" data-title="Check a skill">
+    <a class="back" href="#/skills"><span aria-hidden="true">←</span>&nbsp;All skills</a>
+    <div id="check-body"><p class="sub" role="status">Reading the skill...</p></div>
+  </section>
+
+  <!-- 4. upgrade it: the buy page (shown by Skill Check only; Skill Upgrade starts at the questions) -->
+  <section class="view" id="v-upgrade" data-title="Upgrade your skills">
+    <a class="back" id="up-back" href="#/skills"><span aria-hidden="true">←</span>&nbsp;<span id="up-back-t">All skills</span></a>
+    <div id="up-installed" hidden class="card" style="margin:var(--s3) 0"></div>
+    <div id="up-buy">
+    <div class="eyebrow">Skill Upgrade · one-time payment</div>
+    <h2 tabindex="-1">Make your skills do what you wrote. Every time.</h2>
+    <p class="sub">Pay once and upgrade all your skills, now and later. You start with <span id="up-first">your first skill</span>, then pick the next one whenever you like.</p>
+    <div class="buygrid">
+      <div>
+        <div class="card ba" id="ba" hidden>
+          <div class="head"><b id="ba-head"></b><span class="x2" id="ba-x"></span></div>
+          <div class="row2"><span>Today</span><div class="track" role="img" id="ba-t1"><i id="ba-i1" style="background:#8fd0aa"></i></div><span class="v" id="ba-v1"></span></div>
+          <div class="row2"><span>After the upgrade</span><div class="track" role="img" id="ba-t2"><i id="ba-i2" style="background:var(--teal)"></i></div><span class="v" id="ba-v2"></span></div>
+          <p class="note" style="margin:0" id="ba-note"></p>
+        </div>
+        <h3>What you get</h3>
+        <ul class="benefits">
+          <li><span class="tick" aria-hidden="true">✓</span><div><b>Proof instead of hope</b><span class="d">You do not have to trust that the AI follows an instruction. For every instruction you see whether code enforces it or it is only text.</span></div></li>
+          <li><span class="tick" aria-hidden="true">✓</span><div><b>Checks written for you</b><span class="d">In plain words, for your first skill and then for any skill. You read, you do not code.</span></div></li>
+          <li><span class="tick" aria-hidden="true">✓</span><div><b>Only a few questions</b><span class="d">Only what we cannot work out from your skill, each with a suggested answer.</span></div></li>
+          <li><span class="tick" aria-hidden="true">✓</span><div><b>Run it again in one click</b><span class="d">After any change you see what no longer holds, and why.</span></div></li>
+          <li><span class="tick" aria-hidden="true">✓</span><div><b>All your skills, today and later</b><span class="d">One payment covers every skill you have and every skill you build next.</span></div></li>
+        </ul>
+        <h3>What an unchecked instruction costs</h3>
+        <p class="sub tight">An instruction that is only written can be skipped on any run, and you notice when the video is already uploaded. Skills get edited and AI models change, so an instruction that held last month can quietly stop holding. Every skill you leave unchecked is a bet that this will not happen.</p>
+        <h3>How it works</h3>
+        <ol class="steps3">
+          <li><div><b>We read your skill</b>and write a check for every instruction that code can hold.</div></li>
+          <li><div><b>You answer a few questions</b>only where your skill leaves something open. Suggested answers are included.</div></li>
+          <li><div><b>Your skills are upgraded</b>so that every instruction code can hold is followed the same way every time. A report shows the proof.</div></li>
+        </ol>
+        <h3>Questions</h3>
+        <div class="faq">
+          <details><summary>Does it work on all my skills?</summary><p>Yes. One payment covers every skill on your computer, including new ones.</p></details>
+          <details><summary>Does anything leave my computer?</summary><p>No. Everything runs on your computer. Only the payment happens on the web.</p></details>
+          <details><summary>Is it a one-time payment?</summary><p>Yes. You pay once, use it on all your skills and keep the checks it writes. There is no subscription.</p></details>
+          <details><summary>What if I change a skill later?</summary><p>Run Skill Check again. Anything that no longer holds is listed with a plain reason.</p></details>
+          <details><summary>Do I need to be technical?</summary><p>No. You answer in plain words. The code is written for you.</p></details>
+        </div>
+      </div>
+      <aside class="pricecard" aria-label="Buy Skill Upgrade">
+        <div class="eyebrow">Skill Upgrade</div>
+        <div class="price">USD 19 <small>once</small></div>
+        <div class="note"><s>Regular price USD 49</s> · for all your skills, not just one.</div>
+        <a class="btn big" id="buy-btn" href="#/upgrade" aria-disabled="true">Buy now</a>
+        <p class="note" id="buy-note" hidden style="margin:0 0 var(--s2)"></p>
+        <ul class="assure">
+          <li><span class="tick" aria-hidden="true">✓</span>Pay once, no subscription</li>
+          <li><span class="tick" aria-hidden="true">✓</span>Your skills never leave your computer</li>
+          <li><span class="tick" aria-hidden="true">✓</span>Secure checkout with Stripe</li>
+        </ul>
+        <p class="note" style="margin:12px 0 0"><b>Founding price</b> for the first 20 buyers. After that the price is USD 49.</p>
+      </aside>
+    </div>
+  </div>
+  </section>
+
+  <section class="view" id="v-ask" data-title="Questions">
+    <div id="ask-body"><p class="sub" role="status">Reading your questions...</p></div>
+  </section>
+
+  <section class="view" id="v-done" data-title="Report">
+    <div id="done-body"><p class="sub" role="status">Reading the report...</p></div>
+  </section>
+
+  <section class="view" id="v-control" data-title="Keep control">
+    <div id="control-body"><p class="sub" role="status">Reading your skills...</p></div>
+  </section>
+
+  <section class="view" id="v-control-start" data-title="Keep control">
+    <div id="cstart-body"></div>
+  </section>
+
+  <section class="view" id="v-control-list" data-title="List and tests">
+    <div id="clist-body"><p class="sub" role="status">Reading the list...</p></div>
+  </section>
+
+  <section class="view" id="v-control-done" data-title="In control">
+    <div id="cdone-body"><p class="sub" role="status">Reading the result...</p></div>
+  </section>
+
+</main>
+</div>
+
+<script>
+(function(){
+  var views={'':'v-welcome',skills:'v-skills',check:'v-check',upgrade:'v-upgrade',ask:'v-ask',done:'v-done',control:'v-control','control-start':'v-control-start','control-list':'v-control-list','control-done':'v-control-done'};
+  var order={'':0,skills:1,check:2,upgrade:3,ask:3,done:3,control:4,'control-start':4,'control-list':4,'control-done':4};
+  var running=[];
+  var data=null,loading=null,chosen=null,seq=0;
+
+  function $(id){return document.getElementById(id)}
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  function get(u){return fetch(u).then(function(r){if(!r.ok)throw new Error(u);return r.json()})}
+  function plain(s){return String(s==null?'':s).replace(/`/g,'')}
+  function plural(n,one,many){return n===1?one:many}
+  function pill(st){
+    if(st==='upgrade')return '<span class="pill todo">Upgrade</span>';
+    if(st==='none')return '<span class="pill ok">Nothing to check</span>';
+    return '<span class="pill ok">Good as it is</span>';
+  }
+  function load(){
+    if(!loading)loading=get('/api/skills').then(function(d){data=d;return d});
+    return loading;
+  }
+  function resetLoad(){loading=null}
+
+  /* ---------- choose a skill ---------- */
+  function drawSkills(){
+    var st=$('skills-state');
+    load().then(function(d){
+      var rows=d.skills;
+      if(!rows.length){st.textContent='No skills found. Skills live in a folder called .claude/skills.';st.hidden=false;return}
+      st.hidden=true;$('listhead').hidden=false;$('skills-table').hidden=false;
+      $('skill-rows').innerHTML=rows.map(function(s){
+        var plug=s.origin&&s.origin.kind==='plugin';
+        var p=plug?'<span class="pill txt">From a plugin</span>':pill(s.status),u=encodeURIComponent(s.skill);
+        return '<tr class="row"><td class="name"><a class="rowlink" href="#/skill/'+u+'">'+esc(s.skill)+'</a> '+p+'</td>'+
+          '<td class="n" data-label="Used, 90 days">'+s.uses+'</td>'+
+          '<td class="n big now" data-label="Enforced today">'+s.pct.enforced+'%</td>'+
+          '<td class="n big pot" data-label="Can be enforced">'+s.pct.hold+'%</td>'+
+          '<td class="status">'+p+'</td><td class="go"><span class="chev" aria-hidden="true">→</span></td></tr>';
+      }).join('');
+      var g=d.suggest,b=$('suggest');
+      if(g){
+        b.hidden=false;
+        b.innerHTML='<div class="body"><div class="eyebrow">Suggested to start</div><p><b>'+esc(g.skill)+'</b>. You used it '+g.uses+' '+plural(g.uses,'time','times')+' in the last '+d.days+' days, and only '+g.enforced_pct+'% of it is held by code. The most to win.</p></div>'+
+          '<a class="btn light" href="#/skill/'+encodeURIComponent(g.skill)+'">Check '+esc(g.skill)+'</a>';
+      }else b.hidden=true;
+    }).catch(function(){st.hidden=false;st.textContent='The skills could not be read. Run /skill-check again.'});
+  }
+
+  /* ---------- check it ---------- */
+  function statsBlock(r){
+    var t=r.total;
+    return '<div class="card summary"><div class="stats">'+
+      '<div class="main"><div class="num" data-to="'+r.pct.hold+'" data-suffix="%">'+r.pct.hold+'%</div><div class="cap">can be enforced by code</div></div>'+
+      '<div class="two"><div class="num" data-to="'+r.pct.enforced+'" data-suffix="%">'+r.pct.enforced+'%</div><div class="cap">enforced today</div></div>'+
+      '<div><div class="num" data-to="'+t+'">'+t+'</div><div class="cap">'+plural(t,'instruction','instructions')+' in total</div></div>'+
+      '<div><div class="num" data-to="'+r.add+'">'+r.add+'</div><div class="cap">we can add</div></div>'+
+      '<div><div class="num" data-to="'+r.text+'">'+r.text+'</div><div class="cap">stay text</div></div></div>'+
+      '<div><div class="bar" id="split" role="img" aria-label="Of '+t+' instructions, '+r.enforced+' are enforced today, '+r.add+' can be added and '+r.text+' stay text">'+
+      '<i class="g" data-w="'+r.pct.enforced+'"></i><i class="o" data-w="'+r.pct.add+'"></i><i class="s" data-w="'+r.pct.text+'"></i></div>'+
+      '<ul class="key">'+
+      '<li><span class="sw" style="background:#8fd0aa"></span><span><b>'+r.enforced+' enforced today</b> ('+r.pct.enforced+'%)</span></li>'+
+      '<li><span class="sw" style="background:#f2bd9b"></span><span><b>'+r.add+' we can add</b> ('+r.pct.add+'%)</span></li>'+
+      '<li><span class="sw" style="background:repeating-linear-gradient(135deg,#d8d3c7 0 3px,#ebe8df 3px 6px)"></span><span><b>'+r.text+' stay text</b> ('+r.pct.text+'%): they need your judgment</span></li></ul>'+
+      (r.add>0?'<p class="claim">After the upgrade, <b>100% of what code can hold</b> is enforced: '+r.hold+' of '+r.hold+'.</p>'
+              :'<p class="claim">Code already holds everything it can hold in this skill.</p>')+
+      '</div></div>';
+  }
+  function partsTable(r){
+    var todo=r.parts.filter(function(p){return p.status==='upgrade'});
+    var rest=r.parts.filter(function(p){return p.status!=='upgrade'});
+    var h='';
+    if(todo.length){
+      h+='<div class="tw"><table class="tbl"><thead><tr><th scope="col">Part of the skill</th><th scope="col">What it contains</th><th scope="col">Status</th></tr></thead><tbody>'+
+        todo.map(function(p){return '<tr class="row"><td class="name">'+esc(p.name)+(p.file&&p.file!=='SKILL.md'?' <span class="note">'+esc(p.file)+'</span>':'')+' '+pill('upgrade')+'</td><td class="wide" data-label="What it contains">'+esc(p.line)+'</td><td class="status">'+pill('upgrade')+'</td></tr>'}).join('')+
+        '</tbody></table></div>';
+    }
+    if(rest.length){
+      h+='<details><summary>Show the other '+rest.length+' '+plural(rest.length,'part','parts')+' (good as they are)</summary>'+
+        rest.map(function(p){return esc(p.name)+': '+esc(p.line)}).join('<br>')+'</details>';
+    }
+    return h;
+  }
+  function drawCheck(name){
+    var body=$('check-body'),my=++seq;
+    body.innerHTML='<p class="sub" role="status">Reading the skill...</p>';
+    load().then(function(){return get('/api/skill?name='+encodeURIComponent(name))}).then(function(r){
+      if(my!==seq)return;
+      chosen=r.skill;setNav();
+      document.title=r.skill+' · Skill Check';
+      var h='<h2 tabindex="-1">'+esc(r.skill)+'</h2>';
+      if(!r.total){
+        body.innerHTML=h+'<p class="sub">No instructions were found in this skill, so there is nothing for code to hold.</p>';
+      }else{
+        body.innerHTML=h+'<p class="sub">You wrote '+r.total+' '+plural(r.total,'instruction','instructions')+'. Code can hold '+r.hold+' of them. Today it holds '+r.enforced+'.</p>'+
+          statsBlock(r)+
+          (r.origin&&r.origin.kind==='plugin'?'<p class="legend"><b>From a plugin.</b> This skill belongs to a plugin from a marketplace. A plugin update would overwrite any change, so it cannot be upgraded here. To upgrade it, copy it into your own skills first and upgrade the copy.</p>':'')+
+          (r.add>0&&!(r.origin&&r.origin.kind==='plugin')?'<div class="band cta"><div class="body"><p><b>We write the checks for you.</b> You only confirm the few that need your say.</p></div><a class="btn light big" href="#/upgrade/'+encodeURIComponent(r.skill)+'">Upgrade this skill</a></div>':'')+
+          partsTable(r);
+      }
+      body.querySelectorAll('.band').forEach(glow);
+      body.querySelectorAll('[data-to]').forEach(count);
+      requestAnimationFrame(function(){requestAnimationFrame(function(){body.querySelectorAll('#split i').forEach(function(i){i.style.width=i.dataset.w+'%'})})});
+      var h2=body.querySelector('h2');if(h2)h2.focus({preventScroll:true});
+    }).catch(function(){if(my===seq)body.innerHTML='<p class="sub">This skill could not be read. <a href="#/skills">Back to all skills</a></p>'});
+  }
+
+  /* ---------- upgrade it ---------- */
+  function drawUpgrade(name){
+    chosen=name||chosen;setNav();
+    var back=$('up-back'),inst=$('up-installed'),buy=$('up-buy');
+    back.href=chosen?'#/skill/'+encodeURIComponent(chosen):'#/skills';
+    $('up-back-t').textContent=chosen||'All skills';
+    $('up-first').textContent=chosen||'your first skill';
+    load().then(function(d){
+      if(d.upgrade_installed){
+        buy.hidden=true;inst.hidden=false;
+        var cmd='/skill-upgrade'+(chosen?' '+chosen:'');
+        inst.innerHTML='<h2 tabindex="-1" style="margin-top:0">Upgrade '+(chosen?esc(chosen):'a skill')+'</h2>'+
+          '<p class="sub tight">Skill Upgrade is installed. Type this in the chat and it takes you through the questions, one skill at a time:</p>'+
+          '<p><code id="cmd" style="font-size:17px">'+esc(cmd)+'</code> <button class="btn" id="copy" type="button">Copy</button> <span id="copied" role="status" class="note"></span></p><div id="where"></div>';
+        if(chosen)get('/api/upgrade?name='+encodeURIComponent(chosen)).then(function(u){
+          var w=$('where');if(!w)return;
+          var enc=encodeURIComponent(chosen);
+          if(u.questions.length)w.innerHTML='<p class="sub tight"><b>'+u.questions.length+' '+plural(u.questions.length,'question is','questions are')+' waiting for you.</b></p><a class="btn" href="#/ask/'+enc+'">Answer the questions</a>';
+          else if(u.report)w.innerHTML='<p class="sub tight"><b>A report is ready.</b></p><a class="btn" href="#/done/'+enc+'">Open the report</a>';
+        }).catch(function(){});
+        $('copy').onclick=function(){
+          var done=function(){$('copied').textContent='Copied.'};
+          if(navigator.clipboard)navigator.clipboard.writeText(cmd).then(done,function(){$('copied').textContent='Select the text and copy it.'});
+          else $('copied').textContent='Select the text and copy it.';
+        };
+        return;
+      }
+      inst.hidden=true;buy.hidden=false;
+      var rows=d.skills.filter(function(s){return s.total>0});
+      var ba=$('ba');
+      if(rows.length){
+        var avg=function(k){return Math.round(rows.reduce(function(a,s){return a+s.pct[k]},0)/rows.length)};
+        var e=avg('enforced'),hd=avg('hold');
+        if(hd>e){
+          ba.hidden=false;
+          var times=e>0?hd/e:0;
+          $('ba-head').textContent=times>=2?'More than double the instructions your skills follow every time':'More of the instructions your skills follow every time';
+          $('ba-x').textContent=times>=2?(Math.round(times*10)/10)+'×':'+'+(hd-e)+' points';
+          $('ba-v1').textContent=e+'%';$('ba-v2').textContent=hd+'%';
+          $('ba-i1').style.width=e+'%';$('ba-i2').style.width=hd+'%';
+          $('ba-t1').setAttribute('aria-label',e+' percent');$('ba-t2').setAttribute('aria-label',hd+' percent');
+          $('ba-note').textContent='Average of your '+rows.length+' '+plural(rows.length,'skill','skills')+'. An instruction held by code is followed the same way every time. The rest needs your judgment and stays text, and you see which.';
+        }else ba.hidden=true;
+      }else ba.hidden=true;
+      var bb=$('buy-btn'),bn=$('buy-note');
+      if(d.buy_url){bb.href=d.buy_url;bb.removeAttribute('aria-disabled');bn.hidden=true}
+      else{bb.removeAttribute('href');bb.setAttribute('aria-disabled','true');bn.hidden=false;bn.textContent='The checkout is not open yet.'}
+    });
+  }
+
+  /* ---------- questions and report (written by Skill Upgrade, read here) ---------- */
+  function subnav(on,name){
+    var q='#/ask/'+encodeURIComponent(name),r='#/done/'+encodeURIComponent(name);
+    return '<nav aria-label="Upgrade steps"><ol class="sub-steps">'+
+      '<li class="'+(on==='ask'?'on':'ok')+'"><a href="'+q+'"'+(on==='ask'?' aria-current="step"':'')+'><span class="sn">'+(on==='ask'?'1':'✓')+'</span>Answer the questions</a></li>'+
+      '<li class="'+(on==='done'?'on':'')+'"><a href="'+r+'"'+(on==='done'?' aria-current="step"':'')+'><span class="sn">2</span>Report</a></li>'+
+      '</ol></nav>';
+  }
+  function drawAsk(name){
+    var body=$('ask-body'),my=++seq;
+    chosen=name;setNav();
+    body.innerHTML='<p class="sub" role="status">Reading your questions...</p>';
+    get('/api/upgrade?name='+encodeURIComponent(name)).then(function(u){
+      if(my!==seq)return;
+      var qs=u.questions,h=subnav('ask',name);
+      if(!qs.length){
+        body.innerHTML=h+'<h2 tabindex="-1">Nothing to answer</h2><p class="sub">'+(u.report?'All questions are answered. The report is ready.':'Skill Upgrade has no open questions for '+esc(name)+'. Type <code>/skill-upgrade '+esc(name)+'</code> in the chat to start or continue.')+'</p>'+
+          (u.report?'<a class="btn big" href="#/done/'+encodeURIComponent(name)+'">Open the report</a>':'');
+        return;
+      }
+      h+='<h2 tabindex="-1">'+qs.length+' '+plural(qs.length,'question needs','questions need')+' your say</h2>'+
+        '<p class="sub">We did everything else for you. Each question comes with a suggested answer.</p>';
+      qs.forEach(function(q,i){
+        var cur=q.answer||q.suggest;
+        function b(v,label){return '<button type="button" data-v="'+v+'" aria-pressed="'+(cur===v)+'">'+label+(q.suggest===v?' <small>suggested</small>':'')+'</button>'}
+        h+='<div class="card q" data-ac="'+esc(q.ac)+'" data-v="'+cur+'"><span class="no">Question '+(i+1)+' of '+qs.length+'</span>'+
+          '<h3 id="q'+i+'">Should code check this?</h3><p><b>'+esc(q.text)+'</b></p><p>'+esc(q.why)+'</p>'+
+          '<div class="seg" role="group" aria-labelledby="q'+i+'">'+b('yes','Yes, check it in code')+b('no','No, it stays text')+'</div></div>';
+      });
+      h+='<button class="btn big" id="save-answers" type="button" style="margin-top:var(--s1)">Save my answers</button> <span id="saved" role="status" class="note"></span>';
+      body.innerHTML=h;
+      body.querySelectorAll('.q').forEach(function(card){
+        card.querySelectorAll('button').forEach(function(btn){btn.onclick=function(){
+          card.dataset.v=btn.dataset.v;
+          card.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed',String(x===btn))});
+        }});
+      });
+      $('save-answers').onclick=function(){
+        var a={};body.querySelectorAll('.q').forEach(function(c){a[c.dataset.ac]=c.dataset.v});
+        fetch('/api/answers?name='+encodeURIComponent(name),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(a)})
+          .then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(){
+            $('saved').textContent='Saved. Go back to the chat and say "continue": Skill Upgrade writes the checks from your answers.';
+          }).catch(function(){$('saved').textContent='Could not save the answers. Run the upgrade in the chat first, then try again.'});
+      };
+      body.querySelector('h2').focus({preventScroll:true});
+    }).catch(function(){if(my===seq)body.innerHTML='<p class="sub">This skill could not be read. <a href="#/skills">Back to all skills</a></p>'});
+  }
+  function drawDone(name){
+    var body=$('done-body'),my=++seq;
+    chosen=name;setNav();
+    body.innerHTML='<p class="sub" role="status">Reading the report...</p>';
+    get('/api/upgrade?name='+encodeURIComponent(name)).then(function(u){
+      if(my!==seq)return;
+      var r=u.report,h=subnav('done',name);
+      if(!r){
+        body.innerHTML=h+'<h2 tabindex="-1">No report yet</h2><p class="sub">The report appears after the checks have run. Type <code>/skill-upgrade '+esc(name)+'</code> in the chat'+(u.questions.length?' and answer the questions':'')+'.</p>'+
+          (u.questions.length?'<a class="btn big" href="#/ask/'+encodeURIComponent(name)+'">Answer the questions</a>':'');
+        return;
+      }
+      var t=r.totals,left=r.open_checks,added=Math.max(0,t.now-t.before);
+      h+='<h2 tabindex="-1">'+esc(name)+(left?' is partly upgraded':' is upgraded')+'</h2>'+
+        '<p class="sub">'+(left?left+' '+plural(left,'instruction still has','instructions still have')+' no passing check. Here is where each part stands.':'Code now holds every instruction it can hold. Here is what changed, part by part.')+'</p>'+
+        '<div class="card summary"><div class="stats three">'+
+        '<div class="two"><div class="num" style="font-size:clamp(46px,9cqw,68px);letter-spacing:-.04em">'+t.pct_now+'%</div><div class="cap">of what code can hold is proven by a passing check ('+t.now+' of '+t.hold+', out of '+t.total+' instructions in all)</div></div>'+
+        '<div><div class="num">'+added+'</div><div class="cap">'+plural(added,'check','checks')+' added</div></div>'+
+        '<div><div class="num">'+t.text+'</div><div class="cap">prose instructions</div></div></div></div>'+
+        '<h3>Where this skill stands</h3><ol class="ladder" aria-label="Three levels of control">'+ladderHTML(left?1:(u.control&&u.control.controlled_at?3:2))+'</ol>'+
+        (left||(u.control&&u.control.controlled_at)?'':'<p class="outlook"><b>Next level: in control.</b> You will keep improving this skill. Control makes sure a change cannot quietly break what worked before. <a class="link" href="#/control-start/'+encodeURIComponent(name)+'">See how it works</a></p>')+
+        '<h3>What changed, part by part</h3>'+
+        '<div class="tw" style="margin-top:var(--s2)"><table class="tbl report"><thead><tr><th scope="col">Part of the skill</th><th scope="col" class="n">Instructions</th><th scope="col" class="n">Enforced before</th><th scope="col" class="n">Proven now</th><th scope="col">Status</th></tr></thead><tbody>'+
+        r.parts.map(function(p){
+          var st=p.status==='all'?'<span class="pill done">All proven</span>':p.status==='text'?'<span class="pill txt">Your judgment</span>':'<span class="pill todo">'+(p.hold-p.now)+' still open</span>';
+          return '<tr class="row"><td class="name">'+esc(p.name)+' '+st+'</td><td class="n" data-label="Instructions">'+p.total+'</td><td class="n" data-label="Enforced before">'+p.before+'</td><td class="n big now" data-label="Proven now">'+p.now+'</td><td class="status">'+st+'</td></tr>';
+        }).join('')+
+        '<tr class="row total"><td class="name">Total</td><td class="n" data-label="Instructions">'+t.total+'</td><td class="n" data-label="Enforced before">'+t.before+'</td><td class="n big now" data-label="Proven now">'+t.now+'</td><td class="status"></td></tr></tbody></table></div>'+
+        '<p class="legend">A rule counts as proven only when a check for it ran and passed. A proposed check is a guess until it runs. The '+t.text+' prose '+plural(t.text,'instruction needs','instructions need')+' your judgment and '+plural(t.text,'stays','stay')+' text.</p>'+
+        '<div class="next2"><div><h3>All done here?</h3><p>Pick the next skill. Skill Upgrade works on all of your skills.</p><a class="btn alt" href="#/skills">Back to all skills</a></div>'+(left||(u.control&&u.control.controlled_at)?'':'<div><h3>Want to keep control in the future?</h3><p>Optional. It is the next step in the navigation above.</p><a class="btn" href="#/control-start/'+encodeURIComponent(name)+'">Keep control</a></div>')+'</div>';
+      body.innerHTML=h;
+      body.querySelector('h2').focus({preventScroll:true});
+    }).catch(function(){if(my===seq)body.innerHTML='<p class="sub">This skill could not be read. <a href="#/skills">Back to all skills</a></p>'});
+  }
+
+  /* ---------- levels ---------- */
+  function ladderHTML(reached,label){
+    var L=[['Level 1','Written','The skill only says what to do. Nothing checks it.',1],['Level 2','Enforced','Code holds every instruction it can hold.',2],
+      ['Level 3','In control','A written list of what the skill must do, plus tests, keeps it that way when the skill changes.',3]];
+    return L.map(function(l){
+      var n=l[3],st='';
+      for(var k=0;k<3;k++)st+='<i class="'+(k<n?'f':'')+'" style="height:'+[12,18,24][k]+'px"></i>';
+      var mark=n<=reached?'<span class="tick" aria-hidden="true">✓</span>':'<span class="cross" aria-hidden="true">✕</span>';
+      var cls=n===reached?'done here':n<reached?'done':'';
+      return '<li'+(cls?' class="'+cls+'"':'')+'><span class="stair" aria-hidden="true">'+st+'</span><div><span class="mono">'+l[0]+'</span><b>'+l[1]+'</b><span class="d">'+l[2]+'</span>'+(n===reached?'<span class="you">'+esc(label||'You are here')+'</span>':'')+'</div>'+mark+'</li>';
+    }).join('');
+  }
+  function drawStart(){
+    var ol=$('start-ladder');
+    ol.innerHTML=ladderHTML(1,'');
+    load().then(function(d){
+      var lv=d.levels||{},tot=(lv[1]||0)+(lv[2]||0)+(lv[3]||0);
+      if(!tot)return;
+      var at=lv[3]>=lv[2]&&lv[3]>=lv[1]?3:lv[2]>=lv[1]?2:1;
+      ol.innerHTML=ladderHTML(at,'Most of your skills are here: '+lv[at]+' of '+tot);
+    }).catch(function(){});
+  }
+
+  /* ---------- keep control ---------- */
+  function csub(on,name){
+    var e=encodeURIComponent(name),L=[['Explanation','control-start'],['List and tests','control-list'],['Result','control-done']];
+    return '<nav aria-label="Keep control steps"><ol class="sub-steps">'+L.map(function(l,i){
+      var c=i<on?'ok':i===on?'on':'';
+      return '<li class="'+c+'"><a href="#/'+l[1]+'/'+e+'"'+(i===on?' aria-current="step"':'')+'><span class="sn"'+(i<on?' aria-hidden="true"':'')+'>'+(i<on?'✓':i+1)+'</span>'+l[0]+(i<on?'<span class="sr"> (done)</span>':'')+'</a></li>';
+    }).join('')+'</ol></nav>';
+  }
+  function drawChooser(){
+    var body=$('control-body'),my=++seq;
+    load().then(function(d){
+      if(my!==seq)return;
+      var rows=d.skills.filter(function(s){return s.upgraded&&s.origin.kind==='own'&&s.level>=2});
+      var h='<h2 tabindex="-1">Which skill do you want to keep control of?</h2><p class="sub">Only skills you have already upgraded are listed here. Skill Check remembers which skills it has checked, upgraded and put in control.</p>';
+      if(!rows.length){
+        body.innerHTML=h+'<p class="sub">No skill is upgraded yet. <a class="link" href="#/skills">Choose a skill</a> and upgrade it first.</p>';
+      }else{
+        body.innerHTML=h+'<div class="tw"><table class="tbl"><thead><tr><th scope="col">Skill</th><th scope="col">Level today</th><th scope="col">Status</th><th scope="col"><span class="sr">Open</span></th></tr></thead><tbody>'+
+          rows.map(function(s){
+            var u=encodeURIComponent(s.skill),c=s.level>=3;
+            return '<tr class="row"><td class="name"><a class="rowlink" href="#/'+(c?'control-done':'control-start')+'/'+u+'">'+esc(s.skill)+'</a></td><td data-label="Level today">Level '+s.level+', '+(c?'in control':'enforced')+'</td><td class="status">'+(c?'<span class="pill done">In control</span>':'<span class="pill todo">Keep control</span>')+'</td><td class="go"><span class="chev" aria-hidden="true">→</span></td></tr>';
+          }).join('')+'</tbody></table></div><p class="legend">A skill is not listed? It has to be upgraded first. <a class="link" href="#/skills">Choose a skill</a></p>';
+      }
+      var h2=body.querySelector('h2');if(h2)h2.focus({preventScroll:true});
+    }).catch(function(){if(my===seq)body.innerHTML='<p class="sub">The skills could not be read. Run /skill-check again.</p>'});
+  }
+  function drawControlStart(name){
+    var body=$('cstart-body'),e=encodeURIComponent(name);
+    chosen=name;setNav();
+    body.innerHTML=csub(0,name)+'<h2 tabindex="-1">Keep '+esc(name)+' working as you improve it</h2>'+
+      '<p class="sub">You will keep improving this skill. The risk: one day something that worked yesterday stops working, because a change touched it quietly and nobody noticed. Keep control prevents that. We write down what the skill must do and tie a test to each line. From then on, every change is checked against that list, and you are told which line no longer holds.</p>'+
+      '<ol class="ladder" id="cs-ladder" aria-label="Three levels of control">'+ladderHTML(2)+'</ol>'+
+      '<div class="ctl"><div class="card"><h3 style="margin-top:0 !important">What happens when you press Go</h3><ol class="flow">'+
+      '<li><span class="sn" aria-hidden="true">1</span><div><b>You see the list we wrote down</b><p>One plain line for each instruction, grouped by the part of the skill it belongs to.</p></div></li>'+
+      '<li><span class="sn" aria-hidden="true">2</span><div><b>You see which lines have a test</b><p>Every line that code can hold has a test. That is what control means: it is written down, and a test holds it.</p></div></li>'+
+      '<li><span class="sn" aria-hidden="true">3</span><div><b>You turn it on in the chat</b><p>Skill Upgrade saves the list as the agreement and keeps the tests with the skill.</p></div></li>'+
+      '<li><span class="sn" aria-hidden="true">4</span><div><b>From then on, changes are checked</b><p>After a change to this skill, the tests run and tell you which instruction no longer holds.</p></div></li></ol>'+
+      '<p class="more">Nothing in your skill\'s behavior is changed. The list and the tests are saved next to the skill.</p>'+
+      '<a class="btn big" href="#/control-list/'+e+'">Go</a></div></div>'+
+      '<div class="next2" style="grid-template-columns:1fr"><div><h3>Not now?</h3><p>You can skip this and come back to it any time.</p><a class="btn alt" href="#/skills">Back to all skills</a></div></div>';
+  }
+  function drawControlList(name){
+    var body=$('clist-body'),my=++seq,e=encodeURIComponent(name);
+    chosen=name;setNav();
+    body.innerHTML='<p class="sub" role="status">Reading the list...</p>';
+    get('/api/upgrade?name='+e).then(function(u){
+      if(my!==seq)return;
+      var c=u.control,h=csub(1,name);
+      if(!c){
+        body.innerHTML=h+'<h2 tabindex="-1">Nothing to show yet</h2><p class="sub">The list appears after the upgrade has run its checks. Type <code>/skill-upgrade '+esc(name)+'</code> in the chat.</p><a class="btn big" href="#/upgrade/'+e+'">Back to the upgrade</a>';
+        return;
+      }
+      var t=c.totals;
+      h+='<h2 tabindex="-1">This is what control looks like</h2><p class="sub">Each part of the skill is written down, line by line. Every line that code can hold gets a test. A line that needs judgment is a prose instruction: it is written down and stays text.</p>'+
+        '<div class="card summary"><div class="stats three"><div><div class="num">'+t.lines+'</div><div class="cap">lines written down</div></div><div><div class="num">'+t.tests+'</div><div class="cap">have a test</div></div><div><div class="num">'+t.prose+'</div><div class="cap">prose instructions, as decided</div></div></div></div>'+
+        '<h3>The list, part by part</h3>'+
+        c.parts.map(function(p){
+          var n=p.lines.length;
+          return '<div class="card part"><div class="ph"><b>'+esc(p.name)+'</b><span>'+n+' '+plural(n,'line','lines')+', '+(p.tests?p.tests+' '+plural(p.tests,'test','tests'):'no test')+'</span></div><ul class="cmp">'+
+            p.lines.map(function(l){
+              var pl=l.kind==='test'?'<span class="pill done">Test</span>':l.kind==='prose'?'<span class="pill txt">Prose instruction</span>':'<span class="pill todo">No passing check</span>';
+              return '<li><span>'+esc(plain(l.text))+'</span>'+pl+'</li>';
+            }).join('')+'</ul></div>';
+        }).join('');
+      if(t.open>0){
+        h+='<p class="legend">'+t.open+' '+plural(t.open,'line has','lines have')+' no passing check yet. Finish the upgrade first: control needs a passing check for every line that code can hold.</p><a class="btn big" href="#/upgrade/'+e+'" style="margin-top:var(--s1)">Back to the upgrade</a>';
+      }else if(c.controlled_at){
+        h+='<a class="btn big" href="#/control-done/'+e+'" style="margin-top:var(--s1)">Open the result</a>';
+      }else{
+        h+='<p class="legend">Most of these tests exist already from the upgrade. What is new: the list is saved as the agreement between you and the skill, and the tests run again after every change.</p>'+
+          '<button class="btn big" id="turn-on" type="button" style="margin-top:var(--s1)">Turn on control</button>'+
+          '<div id="turn-note" hidden class="card" style="margin-top:var(--s2)"><p style="margin:0 0 var(--s1)"><b>Say "keep control" in the chat.</b> Skill Upgrade saves the list and turns it on. Then check here:</p><p style="margin:0"><a class="btn" href="#/control-done/'+e+'">Check the result</a></p></div>';
+      }
+      body.innerHTML=h;
+      var b=$('turn-on');if(b)b.onclick=function(){$('turn-note').hidden=false;b.hidden=true};
+      body.querySelector('h2').focus({preventScroll:true});
+    }).catch(function(){if(my===seq)body.innerHTML='<p class="sub">This skill could not be read. <a href="#/skills">Back to all skills</a></p>'});
+  }
+  function drawControlDone(name){
+    var body=$('cdone-body'),my=++seq,e=encodeURIComponent(name);
+    chosen=name;setNav();
+    get('/api/upgrade?name='+e).then(function(u){
+      if(my!==seq)return;
+      var c=u.control;
+      if(!c||!c.controlled_at){
+        body.innerHTML=csub(2,name)+'<h2 tabindex="-1">'+esc(name)+' is not in control yet</h2><p class="sub">Turn it on in the chat first: say "keep control". Then come back here.</p><a class="btn big" href="#/control-list/'+e+'">Back to the list</a>';
+        return;
+      }
+      var t=c.totals;
+      body.innerHTML=csub(2,name)+'<h2 tabindex="-1">'+esc(name)+' is in control</h2><p class="sub">The list is written down and approved, and the tests are in place. A later change cannot quietly break what worked.</p>'+
+        '<ol class="ladder" aria-label="Three levels of control">'+ladderHTML(3)+'</ol>'+
+        '<div class="card summary" style="margin-top:var(--s3)"><div class="stats three"><div><div class="num">'+t.lines+'</div><div class="cap">lines written down and approved</div></div><div><div class="num">'+t.tests+'</div><div class="cap">tests, all passing</div></div><div><div class="num">'+t.prose+'</div><div class="cap">prose instructions, as decided</div></div></div></div>'+
+        '<h3>What happens from now on</h3><div class="card" style="margin:0"><ul class="cmp"><li><span>After a change to '+esc(name)+', the tests run again and tell you which instruction no longer holds.</span></li><li><span>Skill Check shows the same list whenever you open it.</span></li></ul></div>'+
+        '<div class="next2" style="grid-template-columns:1fr"><div><h3>All done here?</h3><p>Pick the next skill. Skill Upgrade works on all of your skills.</p><a class="btn alt" href="#/skills">Back to all skills</a></div></div>';
+      body.querySelector('h2').focus({preventScroll:true});
+    }).catch(function(){if(my===seq)body.innerHTML='<p class="sub">This skill could not be read. <a href="#/skills">Back to all skills</a></p>'});
+  }
+
+  /* ---------- shared ---------- */
+  function setNav(){
+    var c=$('nav-check'),u=$('nav-upgrade');
+    c.href=chosen?'#/skill/'+encodeURIComponent(chosen):'#/skills';
+    u.href=chosen?'#/upgrade/'+encodeURIComponent(chosen):'#/skills';
+    $('nav-control').href=chosen?'#/control-start/'+encodeURIComponent(chosen):'#/control';
+  }
+  function glow(sg){
+    sg.addEventListener('pointermove',function(e){var r=sg.getBoundingClientRect();sg.style.setProperty('--mx',(e.clientX-r.left)+'px');sg.style.setProperty('--my',(e.clientY-r.top)+'px')});
+  }
+  function count(el){
+    var to=+el.dataset.to,suf=el.dataset.suffix||'',t0=performance.now(),d=800;
+    if(matchMedia('(prefers-reduced-motion:reduce)').matches){el.textContent=to+suf;return}
+    (function f(t){var p=Math.min(1,(t-t0)/d),e=1-Math.pow(1-p,3);el.textContent=Math.round(to*e)+suf;if(p<1)running.push(requestAnimationFrame(f))})(t0);
+  }
+  function route(){
+    var h=location.hash;
+    if(h&&h.indexOf('#/')!==0)return;               /* the skip link and other anchors */
+    var path=h.slice(2),key,arg=null;
+    if(path.indexOf('skill/')===0){key='check';arg=decodeURIComponent(path.slice(6))}
+    else if(/^(ask|done|control-start|control-list|control-done)\//.test(path)){key=path.slice(0,path.indexOf('/'));arg=decodeURIComponent(path.slice(path.indexOf('/')+1))}
+    else if(path.indexOf('upgrade')===0){key='upgrade';arg=path.length>8?decodeURIComponent(path.slice(8)):null}
+    else key=path;
+    if(!(key in views))key='';
+    document.querySelectorAll('.view').forEach(function(v){v.classList.remove('on')});
+    var v=$(views[key]);void v.offsetWidth;v.classList.add('on');
+    var at=order[key],fin=(key==='control-done');
+    document.querySelectorAll('#steps li').forEach(function(li,i){
+      var done=i<at||(fin&&i===at),on=i===at&&!done;
+      li.className=done?'done':on?'on':'soon';
+      var a=li.querySelector('a');
+      if(on)a.setAttribute('aria-current','step');else a.removeAttribute('aria-current');
+      li.querySelector('.n').textContent=done?'✓':String(i+1);
+      li.querySelector('.sr').hidden=!done;
+    });
+    running.forEach(function(id){cancelAnimationFrame(id)});running=[];
+    document.title=v.dataset.title+' · Skill Check';
+    scrollTo({top:0});
+    if(key==='skills')drawSkills();
+    if(key==='check'&&arg)drawCheck(arg);
+    if(key==='check'&&!arg){location.hash='#/skills';return}
+    if(key==='upgrade')drawUpgrade(arg);
+    if(key==='ask'||key==='done'){if(arg)(key==='ask'?drawAsk:drawDone)(arg);else{location.hash='#/skills';return}}
+    if(key==='control')drawChooser();
+    if(key===''){drawStart()}
+    if(/^control-(start|list|done)$/.test(key)){
+      if(!arg){location.hash='#/control';return}
+      ({'control-start':drawControlStart,'control-list':drawControlList,'control-done':drawControlDone})[key](arg);
+    }
+    var h2=v.querySelector('h2');if(h2&&key!=='check'&&key!=='ask'&&key!=='done'&&key.indexOf('control')!==0)h2.focus({preventScroll:true});
+  }
+  document.querySelectorAll('.band').forEach(glow);
+  addEventListener('hashchange',route);
+  route();
+})();
+
+</script>
+</body>
+</html>

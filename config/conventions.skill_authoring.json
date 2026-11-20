@@ -1,0 +1,151 @@
+{
+  "snapshot_of": "shipwright/shared/config/conventions.json section skill_authoring",
+  "source_commit": "9a64e333a",
+  "note": "Pinned copy. The Shipwright repo is the source for these limits; refresh by copying the section again and update source_commit.",
+  "skill_authoring": {
+    "limits": [
+      {
+        "id": "name-required",
+        "applies_to": "frontmatter.name",
+        "kind": "hard",
+        "value": true,
+        "unit": "bool",
+        "source": "anthropic",
+        "checkable": true,
+        "note": "name and description are the two required fields"
+      },
+      {
+        "id": "name-max-length",
+        "applies_to": "frontmatter.name",
+        "kind": "hard",
+        "value": 64,
+        "unit": "chars",
+        "source": "anthropic",
+        "checkable": true
+      },
+      {
+        "id": "name-charset",
+        "applies_to": "frontmatter.name",
+        "kind": "hard",
+        "value": "^[a-z0-9-]+$",
+        "unit": "regex",
+        "source": "anthropic",
+        "checkable": true,
+        "note": "lowercase letters, numbers and hyphens only"
+      },
+      {
+        "id": "name-reserved-words",
+        "applies_to": "frontmatter.name",
+        "kind": "hard",
+        "value": [
+          "anthropic",
+          "claude"
+        ],
+        "unit": "words",
+        "source": "anthropic",
+        "checkable": true
+      },
+      {
+        "id": "description-required",
+        "applies_to": "frontmatter.description",
+        "kind": "hard",
+        "value": true,
+        "unit": "bool",
+        "source": "anthropic",
+        "checkable": true,
+        "note": "name and description are the two required fields; description must be non-empty"
+      },
+      {
+        "id": "description-max-length",
+        "applies_to": "frontmatter.description",
+        "kind": "hard",
+        "value": 1024,
+        "unit": "chars",
+        "source": "anthropic",
+        "checkable": true
+      },
+      {
+        "id": "no-xml-tags",
+        "applies_to": "frontmatter.name+description",
+        "kind": "hard",
+        "value": "<[A-Za-z/][^>]*>",
+        "unit": "regex",
+        "source": "anthropic",
+        "checkable": true
+      },
+      {
+        "id": "body-max-lines",
+        "applies_to": "SKILL.md body (after frontmatter)",
+        "kind": "recommended",
+        "value": 500,
+        "unit": "lines",
+        "source": "anthropic",
+        "checkable": true,
+        "note": "Anthropic: 'under 500 lines', so a body of this many lines or more is reported. The page names no token limit. Shipwright's own, stricter runtime-prompt size limit and its anti-ratchet baseline are enforced elsewhere (see shared/prompts/writing-plugin.md) and not repeated here"
+      },
+      {
+        "id": "references-one-level",
+        "applies_to": "references/*.md",
+        "kind": "recommended",
+        "value": 1,
+        "unit": "levels",
+        "source": "anthropic",
+        "checkable": true,
+        "note": "every reference file is linked from SKILL.md; a reference that links on to another reference file makes Claude preview it with head and read it incompletely"
+      },
+      {
+        "id": "reference-toc-threshold",
+        "applies_to": "references/*.md",
+        "kind": "recommended",
+        "value": 100,
+        "unit": "lines",
+        "source": "anthropic",
+        "checkable": true,
+        "note": "a reference file longer than this starts with a table of contents; 'starts with' is read as: within the first 'window' lines (a heading named Contents, or an in-page anchor link). The window is a judgement call, small enough that a partial read (head -100) still sees it",
+        "window": 40
+      },
+      {
+        "id": "forward-slash-paths",
+        "applies_to": "SKILL.md and references/*.md",
+        "kind": "hard",
+        "value": "\\b(scripts|references|assets)\\\\",
+        "unit": "regex",
+        "source": "anthropic",
+        "checkable": true,
+        "note": "write scripts/helper.py, never scripts\\helper.py"
+      },
+      {
+        "id": "description-third-person",
+        "applies_to": "frontmatter.description",
+        "kind": "hard",
+        "value": true,
+        "unit": "bool",
+        "source": "anthropic",
+        "checkable": false,
+        "note": "judgement, not countable: a description says what the skill does and when to use it, in third person. Reviewed by a person or the AI."
+      },
+      {
+        "id": "listing-description-cut",
+        "applies_to": "Claude Code skill listing",
+        "kind": "runtime-cap",
+        "value": 1536,
+        "unit": "chars",
+        "source": "Claude Code docs, UNVERIFIED: second-hand from a research report of a parallel session (2026-11-14); check code.claude.com/docs/en/skills.md and context-window.md before relying on it",
+        "verified": false,
+        "checkable": false,
+        "note": "if the number holds it is looser than description-max-length, which would already keep us under it"
+      },
+      {
+        "id": "post-compaction-skill-cap",
+        "applies_to": "Claude Code after compaction",
+        "kind": "runtime-cap",
+        "value": 5000,
+        "unit": "tokens per skill (25000 total)",
+        "source": "Claude Code docs, UNVERIFIED: second-hand from a research report of a parallel session (2026-11-14); check code.claude.com/docs/en/skills.md and context-window.md before relying on it",
+        "verified": false,
+        "checkable": false,
+        "note": "a skill body longer than this is cut when re-injected after compaction; verify against the current docs before relying on it"
+      }
+    ]
+  }
+}

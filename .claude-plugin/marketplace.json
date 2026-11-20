@@ -1,0 +1,13 @@
+{
+  "name": "skill-check",
+  "owner": {
+    "name": "Sven Roth"
+  },
+  "description": "Reads your Claude skills on this machine, shows which rules are enforced and which only written, and checks them against the skill authoring limits.",
+  "plugins": [
+    {
+      "name": "skill-check",
+      "source": "./"
+    }
+  ]
+}
