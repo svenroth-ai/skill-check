@@ -30,6 +30,10 @@ In Claude Code:
 
 Restart Claude Code, then run `/skill-check`. The view opens beside the chat, or at `http://localhost:3921` in your browser.
 
+**Best experience: the Claude desktop app.** `/skill-check` prints a link to the Companion View. Click it. If the app is set to **Open in app**, the view opens beside the chat and Claude can see the page. You choose this once, in the dialog "Where should links open?" (or hold the Command key while clicking to use your default browser).
+
+![Where should links open? Open in app](assets/open-in-app.png)
+
 **Needs** Python 3.10 or newer, or [uv](https://docs.astral.sh/uv/) if you have no Python. No packages. Tested on Windows. macOS and Linux should work the same way; reports are welcome.
 
 ## Update

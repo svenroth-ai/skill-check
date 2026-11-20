@@ -1,6 +1,5 @@
 import type { Register } from 'claude-code'
 
-const PANE = 'skill-check'
 const PORT = '3921' // not 3920: that port is used by other local tools in the author's setups
 const URL = `http://localhost:${PORT}`
 const MIN_PYTHON = '3.10' // the scripts use syntax from 3.10; the README says the same
@@ -90,7 +89,6 @@ export const register: Register = on => {
       })()
     }
     const isUp = await waitForServer($, py)
-    const placed = await $.ui.open({ id: PANE, title: 'Skill Check' })
     const head = `Skill Check scanned ${summary.skills} ${summary.skills === 1 ? 'skill' : 'skills'}` +
       (summary.hard ? ` and found ${summary.hard} hard ${summary.hard === 1 ? 'finding' : 'findings'}.` : ' and found nothing that breaks a limit.')
     if (!isUp) {
@@ -102,20 +100,6 @@ The Companion View could not start on ${URL}. Is another program, or an older Sk
 
 **Open the Companion View:** ${URL}
 
-Open it in your browser, or in Claude Code's built-in browser to show it in the panel on the right.` + (placed.isPlaced ? '' : ` (The panel is not drawn on this surface, use the link.)`) }
-  })
-
-  on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
-    const { Box, Text, Link } = $.ui.resolve(e)
-    return (
-      <Box flexDirection="column">
-        <Text bold>Skill Check</Text>
-        <Text>{summary ? `${summary.skills} ${summary.skills === 1 ? 'skill' : 'skills'} scanned. Everything stays on your computer.` : 'Run /skill-check to scan your skills.'}</Text>
-        <Text> </Text>
-        <Link href={URL} label="Open Companion View" />
-        <Text> </Text>
-        <Text dimColor>Opens the full view in your browser, or in Claude Code's built-in browser.</Text>
-      </Box>
-    )
+Click the link. In the desktop app it opens beside the chat or in your browser, as you set it under links. In a terminal, open it in your browser.` }
   })
 }
