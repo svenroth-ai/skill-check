@@ -57,12 +57,82 @@ async function waitForServer($: any, py: string[]): Promise<boolean> {
   return false
 }
 
+function listen($: any): void {
+  if (isListening) return
+  {
+    isListening = true
+    // A click in the view (for example "Start the upgrade") is picked up here and goes on in the chat, as the
+    // person's own words. The view only ever queues fixed sentences for a skill that exists and is the person's.
+    let isBusy = false
+    $.ui.log('skill-check chat link: started', { to: 'debug' })
+    $.clock.every(2000, async () => {
+      if (isBusy) return
+      isBusy = true
+      try {
+        const r = await $.http.fetch(`${URL}/api/intent/take`, { method: 'POST', headers: { Origin: URL, 'Content-Type': 'application/json' }, body: '{}' })
+        const text = r.ok ? JSON.parse(r.text || '{}').text : undefined
+        if (typeof text === 'string' && text) await $.prompt.submit({ text, asUser: true })
+      } catch (err) {
+        $.ui.log(`skill-check chat link: ${String(err)}`, { to: 'debug' })
+      } finally {
+        isBusy = false
+      }
+    })
+  }
+}
+
+// Start the view in the background (once) and the link from the view to the chat. Called when the session starts,
+// so the view is already there when someone needs it, and again by /skill-check.
+async function ensureView($: any, py: string[]): Promise<boolean> {
+  const root = $.plugin.root
+  if (!isServing) {
+    isServing = true
+    void (async () => {
+      try {
+        const server = $.process.spawn({ argv: [...py, `${root}/scripts/serve.py`, '--port', PORT] })
+        for await (const { text } of server) $.ui.log(text, { to: 'debug' })
+      } catch (err) {
+        $.ui.log(`skill-check server did not start: ${String(err)}`, { to: 'debug' })
+      } finally {
+        isServing = false
+      }
+    })()
+  }
+  const isUp = await waitForServer($, py)
+  if (isUp) listen($)
+  return isUp
+}
+
+let isWarmed = false
+
 export const register: Register = on => {
+  // The first turn of a session also starts the view, in case session.start could not.
+  on('turn.start', async ($, e, next) => {
+    if (!isWarmed) {
+      isWarmed = true
+      try {
+        const py = await findPython($)
+        if (py) await ensureView($, py)
+      } catch (err) {
+        $.ui.log(`skill-check: view not started: ${String(err)}`, { to: 'debug' })
+      }
+    }
+    return next(e)
+  })
+
   on('session.start', async ($, e, next) => {
     await $.command.register({
       name: 'skill-check',
       description: 'Scan your skills and open the Skill Check view beside the chat',
     })
+    listen($) // needs no process: it only asks the view for clicks, and stays quiet while the view is down
+    // Quietly start the view so it is ready for Skill Upgrade too. It listens on this computer only.
+    try {
+      const py = await findPython($)
+      if (py) $.ui.log(`skill-check: view ${(await ensureView($, py)) ? 'up' : 'not up'}`, { to: 'debug' })
+    } catch (err) {
+      $.ui.log(`skill-check: view not started: ${String(err)}`, { to: 'debug' })
+    }
     return next(e)
   })
 
@@ -76,40 +146,7 @@ export const register: Register = on => {
     if (!parsed) return { text: 'The scan finished but returned no readable summary. Run: python scripts/check_skills.py' }
     summary = parsed
 
-    if (!isServing) {
-      isServing = true
-      void (async () => {
-        try {
-          const server = $.process.spawn({ argv: [...py, `${root}/scripts/serve.py`, '--port', PORT] })
-          for await (const { text } of server) $.ui.log(text, { to: 'debug' })
-        } catch (err) {
-          $.ui.log(`skill-check server did not start: ${String(err)}`, { to: 'debug' })
-        } finally {
-          isServing = false
-        }
-      })()
-    }
-    const isUp = await waitForServer($, py)
-    if (isUp && !isListening) {
-      isListening = true
-      // A click in the view (for example "Start the upgrade") is picked up here and goes on in the chat, as the
-      // person's own words. The view only ever queues fixed sentences for a skill that exists and is the person's.
-      let isBusy = false
-      $.ui.log('skill-check chat link: started', { to: 'debug' })
-      $.clock.every(2000, async () => {
-        if (isBusy) return
-        isBusy = true
-        try {
-          const r = await $.http.fetch(`${URL}/api/intent/take`, { method: 'POST', headers: { Origin: URL, 'Content-Type': 'application/json' }, body: '{}' })
-          const text = r.ok ? JSON.parse(r.text || '{}').text : undefined
-          if (typeof text === 'string' && text) await $.prompt.submit({ text, asUser: true })
-        } catch (err) {
-          $.ui.log(`skill-check chat link: ${String(err)}`, { to: 'debug' })
-        } finally {
-          isBusy = false
-        }
-      })
-    }
+    const isUp = await ensureView($, py)
     const head = `Skill Check scanned ${summary.skills} ${summary.skills === 1 ? 'skill' : 'skills'}` +
       (summary.hard ? ` and found ${summary.hard} hard ${summary.hard === 1 ? 'finding' : 'findings'}.` : ' and found nothing that breaks a limit.')
     if (!isUp) {
