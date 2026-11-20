@@ -7,6 +7,7 @@ It starts the real server on a free port with a small fixture (two skills, some 
 start, choose a skill, check it, upgrade it, at desktop and phone width. Exit code 0 when every step holds.
 """
 from __future__ import annotations
+import os
 
 import json
 import sys
@@ -64,6 +65,7 @@ def main() -> int:
 
     with sync_playwright() as p:
         b = launch(p)
+        os.environ["USERPROFILE"] = os.environ["HOME"] = tmp.name  # marks the test sets must never land in the real home
         for label, size in (("desktop", {"width": 1280, "height": 900}), ("phone", {"width": 390, "height": 800})):
             page = b.new_page(viewport=size)
             errors: list[str] = []
@@ -171,6 +173,22 @@ def main() -> int:
             check("Most of your skills are here" in page.locator("#start-ladder .you").inner_text(), f"{label}: start page marks where your skills are")
             status_file.write_text(before, encoding="utf-8")
             installed["v"] = False
+            page.goto(url + "#/control")
+            page.reload()
+            page.wait_for_selector("#v-upgrade.on")
+            check(page.locator("#up-buy").is_visible(), f"{label}: Keep control without Skill Upgrade leads to the buy page")
+            page.goto(url + "#/skill/demo")
+            page.wait_for_selector("#claim")
+            page.click("#claim")
+            page.wait_for_selector("#claim[data-mine='1']")
+            page.goto(url + "#/skills")
+            page.wait_for_selector("#skill-rows tr")
+            row = page.locator("#skill-rows tr", has_text="demo").first.inner_text()
+            check("Upgrade" not in row and "Not yours" in row, f"{label}: a skill marked not mine shows 'Not yours' in the list: {row!r}")
+            page.goto(url + "#/skill/demo")
+            page.wait_for_selector("#claim[data-mine='1']")
+            page.click("#claim")
+            page.wait_for_selector("#claim[data-mine='0']")
             check(not errors, f"{label}: no script errors {errors}")
             page.close()
         b.close()

@@ -509,7 +509,7 @@ i[data-agent],i[data-host]{font-style:normal}
     b.addEventListener('click',function(){
       b.disabled=true;
       fetch('/api/origin?name='+encodeURIComponent(name),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mine:b.dataset.mine==='1'})})
-        .then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(){route()}).catch(function(){b.disabled=false;b.textContent='That did not work. Try again.'});
+        .then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(){resetLoad();route()}).catch(function(){b.disabled=false;b.textContent='That did not work. Try again.'});
     });
   }
   function pill(st){
@@ -564,7 +564,7 @@ i[data-agent],i[data-host]{font-style:normal}
       '<li><span class="sw" style="background:#8fd0aa"></span><span><b>'+r.enforced+' enforced today</b> ('+r.pct.enforced+'%)</span></li>'+
       '<li><span class="sw" style="background:#f2bd9b"></span><span><b>'+r.add+' we can add</b> ('+r.pct.add+'%)</span></li>'+
       '<li><span class="sw" style="background:repeating-linear-gradient(135deg,#d8d3c7 0 3px,#ebe8df 3px 6px)"></span><span><b>'+r.text+' stay text</b> ('+r.pct.text+'%): they need your judgment</span></li></ul>'+
-      (r.add>0?'<p class="claim">After the upgrade, <b>100% of what code can hold</b> is enforced: '+r.hold+' of '+r.hold+'.</p>'
+      (notOwn(r.origin)?'':r.add>0?'<p class="claim">After the upgrade, <b>100% of what code can hold</b> is enforced: '+r.hold+' of '+r.hold+'.</p>'
               :'<p class="claim">Code already holds everything it can hold in this skill.</p>')+
       '</div></div>';
   }
@@ -574,7 +574,7 @@ i[data-agent],i[data-host]{font-style:normal}
     var h='';
     if(todo.length){
       h+='<div class="tw"><table class="tbl"><thead><tr><th scope="col">Part of the skill</th><th scope="col">What it contains</th><th scope="col">Status</th></tr></thead><tbody>'+
-        todo.map(function(p){return '<tr class="row"><td class="name">'+esc(p.name)+(p.file&&p.file!=='SKILL.md'?' <span class="note">'+esc(p.file)+'</span>':'')+' '+pill('upgrade')+'</td><td class="wide" data-label="What it contains">'+esc(p.line)+'</td><td class="status">'+pill('upgrade')+'</td></tr>'}).join('')+
+        todo.map(function(p){return '<tr class="row"><td class="name">'+esc(p.name)+(p.file&&p.file!=='SKILL.md'?' <span class="note">'+esc(p.file)+'</span>':'')+' '+pill(r.origin&&notOwn(r.origin)?'none':'upgrade')+'</td><td class="wide" data-label="What it contains">'+esc(p.line)+'</td><td class="status">'+pill(notOwn(r.origin)?'none':'upgrade')+'</td></tr>'}).join('')+
         '</tbody></table></div>';
     }
     if(rest.length){
@@ -883,7 +883,7 @@ i[data-agent],i[data-host]{font-style:normal}
     var c=$('nav-check'),u=$('nav-upgrade');
     c.href=chosen?'#/skill/'+encodeURIComponent(chosen):'#/skills';
     u.href=chosen?'#/upgrade/'+encodeURIComponent(chosen):'#/skills';
-    $('nav-control').href=chosen?'#/control-start/'+encodeURIComponent(chosen):'#/control';
+    $('nav-control').href=data&&!data.upgrade_installed?'#/upgrade':chosen?'#/control-start/'+encodeURIComponent(chosen):'#/control';
   }
   function glow(sg){
     sg.addEventListener('pointermove',function(e){var r=sg.getBoundingClientRect();sg.style.setProperty('--mx',(e.clientX-r.left)+'px');sg.style.setProperty('--my',(e.clientY-r.top)+'px')});
@@ -902,6 +902,11 @@ i[data-agent],i[data-host]{font-style:normal}
     else if(path.indexOf('upgrade')===0){key='upgrade';arg=path.length>8?decodeURIComponent(path.slice(8)):null}
     else key=path;
     if(!(key in views))key='';
+    if(key.indexOf('control')===0&&!(data&&data.upgrade_installed)){
+      load().then(function(d){if(!d.upgrade_installed){location.hash='#/upgrade'}else{setNav();route()}});
+      if(!data)return;
+      if(!data.upgrade_installed){location.hash='#/upgrade';return}
+    }
     document.querySelectorAll('.view').forEach(function(v){v.classList.remove('on')});
     var v=$(views[key]);void v.offsetWidth;v.classList.add('on');
     var at=order[key],fin=(key==='control-done');
