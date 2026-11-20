@@ -148,6 +148,18 @@ class Route(unittest.TestCase):
         self.assertEqual(self.req("POST", "/api/answers?name=demo", ["x"])[0], 400)
         self.assertEqual(self.req("POST", "/api/answers?name=bare", {"A2": "no"})[0], 409)  # no baseline folder
 
+    def test_a_user_can_say_a_skill_is_not_theirs_and_it_is_then_refused(self):
+        from unittest import mock
+        home = Path(self.tmp.name) / "home"
+        home.mkdir()
+        with mock.patch("pathlib.Path.home", return_value=home):
+            s, b = self.req("POST", "/api/origin?name=demo", {"mine": False})
+            self.assertEqual((s, json.loads(b)["origin"]), (200, {"kind": "foreign"}))
+            self.assertEqual(self.req("POST", "/api/answers?name=demo", {"A2": "no"})[0], 403)
+            self.assertEqual(self.req("POST", "/api/origin?name=demo", {"mine": "yes"})[0], 400)
+            self.assertEqual(json.loads(self.req("POST", "/api/origin?name=demo", {"mine": True})[1])["origin"], {"kind": "own"})
+        self.assertTrue((home / ".shipwright" / "skill-check" / "origin_marks.json").is_file())
+
 
 if __name__ == "__main__":
     unittest.main()

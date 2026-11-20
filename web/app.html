@@ -488,6 +488,26 @@ i[data-agent],i[data-host]{font-style:normal}
   function get(u){return fetch(u).then(function(r){if(!r.ok)throw new Error(u);return r.json()})}
   function plain(s){return String(s==null?'':s).replace(/`/g,'')}
   function plural(n,one,many){return n===1?one:many}
+  function notOwn(o){return !!o&&o.kind!=='own'}
+  function originPill(o){return o.kind==='plugin'?'From a plugin':o.kind==='installed'?'Installed from '+esc(o.source):'Not yours'}
+  function originNote(o){
+    if(o.kind==='plugin')return '<b>From a plugin.</b> This skill belongs to a plugin from a marketplace. A plugin update would overwrite any change, so it cannot be upgraded here. To upgrade it, copy it into your own skills first and upgrade the copy.';
+    if(o.kind==='installed')return '<b>Installed from '+esc(o.source)+'.</b> You did not write this skill. A new install would overwrite any change, so it cannot be upgraded here. To upgrade it, copy it into your own skills under a new name and upgrade the copy.';
+    return '<b>Marked as not yours.</b> It is left out of your levels and cannot be upgraded here.';
+  }
+  function claimButton(r){
+    if(r.origin.kind==='plugin')return '';
+    var mine=r.origin.kind!=='own';
+    return '<p class="legend"><button type="button" class="btn light" id="claim" data-mine="'+(mine?'1':'0')+'">'+(mine?'This is my skill':'This is not my skill')+'</button></p>';
+  }
+  function wireClaim(name){
+    var b=document.getElementById('claim');if(!b)return;
+    b.addEventListener('click',function(){
+      b.disabled=true;
+      fetch('/api/origin?name='+encodeURIComponent(name),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mine:b.dataset.mine==='1'})})
+        .then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(){route()}).catch(function(){b.disabled=false;b.textContent='That did not work. Try again.'});
+    });
+  }
   function pill(st){
     if(st==='upgrade')return '<span class="pill todo">Upgrade</span>';
     if(st==='none')return '<span class="pill ok">Nothing to check</span>';
@@ -506,9 +526,10 @@ i[data-agent],i[data-host]{font-style:normal}
       var rows=d.skills;
       if(!rows.length){st.textContent='No skills found. Skills live in a folder called .claude/skills.';st.hidden=false;return}
       st.hidden=true;$('listhead').hidden=false;$('skills-table').hidden=false;
+      rows=rows.slice().sort(function(a,b){return (notOwn(a.origin)?1:0)-(notOwn(b.origin)?1:0)});
       $('skill-rows').innerHTML=rows.map(function(s){
-        var plug=s.origin&&s.origin.kind==='plugin';
-        var p=plug?'<span class="pill txt">From a plugin</span>':pill(s.status),u=encodeURIComponent(s.skill);
+        var plug=notOwn(s.origin);
+        var p=plug?'<span class="pill txt">'+originPill(s.origin)+'</span>':pill(s.status),u=encodeURIComponent(s.skill);
         return '<tr class="row"><td class="name"><a class="rowlink" href="#/skill/'+u+'">'+esc(s.skill)+'</a> '+p+'</td>'+
           '<td class="n" data-label="Used, 90 days">'+s.uses+'</td>'+
           '<td class="n big now" data-label="Enforced today">'+s.pct.enforced+'%</td>'+
@@ -569,12 +590,13 @@ i[data-agent],i[data-host]{font-style:normal}
       if(!r.total){
         body.innerHTML=h+'<p class="sub">No instructions were found in this skill, so there is nothing for code to hold.</p>';
       }else{
-        body.innerHTML=h+'<p class="sub">You wrote '+r.total+' '+plural(r.total,'instruction','instructions')+'. Code can hold '+r.hold+' of them. Today it holds '+r.enforced+'.</p>'+
+        body.innerHTML=h+'<p class="sub">'+(notOwn(r.origin)?'This skill has ':'You wrote ')+r.total+' '+plural(r.total,'instruction','instructions')+'. Code can hold '+r.hold+' of them. Today it holds '+r.enforced+'.</p>'+
           statsBlock(r)+
-          (r.origin&&r.origin.kind==='plugin'?'<p class="legend"><b>From a plugin.</b> This skill belongs to a plugin from a marketplace. A plugin update would overwrite any change, so it cannot be upgraded here. To upgrade it, copy it into your own skills first and upgrade the copy.</p>':'')+
-          (r.add>0&&!(r.origin&&r.origin.kind==='plugin')?'<div class="band cta"><div class="body"><p><b>We write the checks for you.</b> You only confirm the few that need your say.</p></div><a class="btn light big" href="#/upgrade/'+encodeURIComponent(r.skill)+'">Upgrade this skill</a></div>':'')+
+          (notOwn(r.origin)?'<p class="legend">'+originNote(r.origin)+'</p>':'')+claimButton(r)+
+          (r.add>0&&!notOwn(r.origin)?'<div class="band cta"><div class="body"><p><b>We write the checks for you.</b> You only confirm the few that need your say.</p></div><a class="btn light big" href="#/upgrade/'+encodeURIComponent(r.skill)+'">Upgrade this skill</a></div>':'')+
           partsTable(r);
       }
+      wireClaim(r.skill);
       body.querySelectorAll('.band').forEach(glow);
       body.querySelectorAll('[data-to]').forEach(count);
       requestAnimationFrame(function(){requestAnimationFrame(function(){body.querySelectorAll('#split i').forEach(function(i){i.style.width=i.dataset.w+'%'})})});

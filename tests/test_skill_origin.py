@@ -31,6 +31,24 @@ class Origin(unittest.TestCase):
                 self.skipTest("no permission to create links here")
             self.assertEqual(so.origin(link, home)["kind"], "plugin")
 
+    def test_a_skill_an_installer_put_there_is_not_yours_until_you_say_so(self):
+        import json
+        with tempfile.TemporaryDirectory() as t:
+            home = Path(t)
+            (home / ".agents").mkdir()
+            (home / ".agents" / ".skill-lock.json").write_text(
+                json.dumps({"skills": {"gsap": {"source": "greensock/skills"}}}), encoding="utf-8")
+            d = make_skill(home / ".claude" / "skills", "gsap")
+            mine = make_skill(home / ".claude" / "skills", "writer")
+            self.assertEqual(so.origin(d, home), {"kind": "installed", "source": "greensock/skills"})
+            self.assertEqual(so.origin(mine, home), {"kind": "own"})
+            so.set_mark("gsap", True, home)
+            self.assertEqual(so.origin(d, home), {"kind": "own"})
+            so.set_mark("writer", False, home)
+            self.assertEqual(so.origin(mine, home), {"kind": "foreign"})
+            with self.assertRaises(ValueError):
+                so.set_mark("../x", True, home)
+
     def test_levels(self):
         self.assertEqual(so.level({"add": 2, "hold": 3}, None), 1)
         self.assertEqual(so.level({"add": 0, "hold": 3}, None), 2)

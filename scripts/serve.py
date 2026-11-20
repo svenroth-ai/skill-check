@@ -179,7 +179,7 @@ def make_handler(out: Path, roots: list[Path] | None = None, projects: Path | No
             if host not in ALLOWED_HOSTS or not same:  # a page on another site must not write answers
                 return self._send(403, b"forbidden", "text/plain; charset=utf-8")
             path, _, query = self.path.partition("?")
-            if path != "/api/answers" or not (self.headers.get("Content-Type") or "").startswith("application/json"):
+            if path not in ("/api/answers", "/api/origin") or not (self.headers.get("Content-Type") or "").startswith("application/json"):
                 return self._send(404, b"not found", "text/plain; charset=utf-8")
             d = skill_path(roots, urllib.parse.parse_qs(query).get("name", [""])[0])
             try:
@@ -189,8 +189,15 @@ def make_handler(out: Path, roots: list[Path] | None = None, projects: Path | No
                 body = None
             if d is None or not isinstance(body, dict):
                 return self._send(400, b"bad request", "text/plain; charset=utf-8")
+            if path == "/api/origin":  # the user's own word on whether a skill is theirs
+                if not isinstance(body.get("mine"), bool):
+                    return self._send(400, b"bad request", "text/plain; charset=utf-8")
+                if skill_origin.origin(d)["kind"] == "plugin":
+                    return self._send(403, b"a plugin skill cannot be claimed", "text/plain; charset=utf-8")
+                skill_origin.set_mark(d.name, body["mine"])
+                return self._json({"origin": skill_origin.origin(d)})
             if skill_origin.origin(d)["kind"] != "own":
-                return self._send(403, b"this skill belongs to a plugin and cannot be changed here", "text/plain; charset=utf-8")
+                return self._send(403, b"this skill is not yours and cannot be changed here", "text/plain; charset=utf-8")
             if not (d / "baseline").is_dir():
                 return self._send(409, b"this skill has no baseline yet", "text/plain; charset=utf-8")
             self._json({"saved": upgrade_view.save_answers(d, body)})
