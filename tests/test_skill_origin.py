@@ -42,6 +42,11 @@ class Origin(unittest.TestCase):
             mine = make_skill(home / ".claude" / "skills", "writer")
             self.assertEqual(so.origin(d, home), {"kind": "installed", "source": "greensock/skills"})
             self.assertEqual(so.origin(mine, home), {"kind": "own"})
+            synced = home / ".claude" / "skills" / "synced" / "abc"
+            synced.mkdir(parents=True)
+            (synced / "manifest.json").write_text(json.dumps({"skills": [{"name": "pptx"}]}), encoding="utf-8")
+            pp = make_skill(home / ".claude" / "skills", "pptx")
+            self.assertEqual(so.origin(pp, home), {"kind": "installed", "source": "claude.ai"})
             so.set_mark("gsap", True, home)
             self.assertEqual(so.origin(d, home), {"kind": "own"})
             so.set_mark("writer", False, home)

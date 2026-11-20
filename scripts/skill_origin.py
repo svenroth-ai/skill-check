@@ -8,6 +8,7 @@ origin   "own"       a skill the user keeps and wrote (~/.claude/skills, or a pr
                      so any change made there is lost: such a skill can be checked but never upgraded in place.
                      A skill folder that is a link into the plugin cache is a plugin skill too: the real path decides.
          "installed" a skill an installer put there (~/.agents/.skill-lock.json names it and its source)
+                     (or the skill's name is in the claude.ai sync manifest: source "claude.ai")
          "foreign"   a skill the user marked as not theirs (~/.shipwright/skill-check/origin_marks.json)
          The user can override the guess either way: a mark "mine" makes an installed skill own again.
          Only "own" skills are ever upgraded or counted in the user's levels.
@@ -44,6 +45,16 @@ def set_mark(name: str, mine: bool, home: Path | None = None) -> None:
     path.write_text(json.dumps(marks, indent=1), encoding="utf-8")
 
 
+def synced_names(home: Path) -> set[str]:
+    """Names of the skills Claude syncs from the user's claude.ai account (~/.claude/skills/synced/<id>/manifest.json)."""
+    names: set[str] = set()
+    for m in (home / ".claude" / "skills" / "synced").glob("*/manifest.json"):
+        for sk in _json(m).get("skills") or []:
+            if isinstance(sk, dict) and isinstance(sk.get("name"), str):
+                names.add(sk["name"])
+    return names
+
+
 def origin(skill: Path, home: Path | None = None) -> dict:
     home = home or Path.home()
     cache = (home / ".claude" / "plugins" / "cache").resolve()
@@ -59,6 +70,8 @@ def origin(skill: Path, home: Path | None = None) -> dict:
         src = (_json(home / ".agents" / ".skill-lock.json").get("skills") or {}).get(skill.name)
         if isinstance(src, dict) and isinstance(src.get("source"), str):
             return {"kind": "installed", "source": src["source"]}
+        if skill.name in synced_names(home):
+            return {"kind": "installed", "source": "claude.ai"}
         return {"kind": "own"}
     parts = rel.parts  # <marketplace>/<plugin>/<version>/skills/<name>
     return {"kind": "plugin", "marketplace": parts[0] if parts else "", "plugin": parts[1] if len(parts) > 1 else ""}
