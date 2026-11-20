@@ -170,6 +170,8 @@ class Route(unittest.TestCase):
         self.assertEqual(json.loads(b), {"text": 'Upgrade the skill "demo" with Skill Upgrade.'})
         self.assertEqual(json.loads(self.req("POST", "/api/intent/take", {})[1]), {})  # taken once
         self.assertTrue(json.loads(self.req("GET", "/api/intent/status", origin=None)[1])["listening"])  # it just asked
+        self.req("POST", "/api/intent?name=demo", {"action": "answers"})
+        self.assertIn("answered the questions", json.loads(self.req("POST", "/api/intent/take", {})[1])["text"])
 
 
 if __name__ == "__main__":

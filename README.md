@@ -15,6 +15,7 @@ Free and open source (MIT). It runs on your computer: no account, no upload, no 
 - **Your most used skills first.** It reads how often you used each skill in the last 90 days and suggests where to start.
 - **Authoring limits.** Size, name and description rules, backslash paths, references that link on to other references. Hard findings break a limit, recommended ones are advice.
 - **Look-alike descriptions.** Skills whose descriptions use very similar words, so Claude may pick the wrong one.
+- **A helper beside the chat.** The Companion View is where you look and click; the chat is where Claude works. A click in the view (for example "Start the upgrade") carries on in the chat.
 - **Skills from plugins are marked** "From a plugin" and are never changed. A plugin update would replace the change.
 
 ![Your skills with how much is enforced today](assets/skills.png)

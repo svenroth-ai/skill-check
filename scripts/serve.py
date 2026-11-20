@@ -112,6 +112,7 @@ def buy_url() -> str:
 INTENT_TEXT = {  # what a click in the view says to the chat: fixed words, only the skill name is filled in
     "upgrade": 'Upgrade the skill "{skill}" with Skill Upgrade.',  # no leading slash: a plugin may not submit a command
     "control": 'Keep control of the skill "{skill}".',
+    "answers": 'I answered the questions for the skill "{skill}" in the Companion View. Please continue.',
 }
 LISTEN_SECONDS = 8  # the chat side counts as listening when it asked for work this recently
 

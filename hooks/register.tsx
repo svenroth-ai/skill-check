@@ -121,6 +121,6 @@ The Companion View could not start on ${URL}. Is another program, or an older Sk
 
 **Open the Companion View:** ${URL}
 
-Click the link. In the desktop app it opens beside the chat or in your browser, as you set it under links. In a terminal, open it in your browser.` }
+**Next step:** choose a skill in the Companion View. When you click there, I carry on in this chat, so you always see what is happening on the left and use the view as your helper on the right. In the desktop app the link opens beside the chat or in your browser, as you set it under links. In a terminal, open it in your browser.` }
   })
 }

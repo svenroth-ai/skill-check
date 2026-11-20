@@ -708,7 +708,9 @@ i[data-agent],i[data-host]{font-style:normal}
         var a={};body.querySelectorAll('.q').forEach(function(c){a[c.dataset.ac]=c.dataset.v});
         fetch('/api/answers?name='+encodeURIComponent(name),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(a)})
           .then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(){
-            $('saved').textContent='Saved. Go back to the chat and say "continue": Skill Upgrade writes the checks from your answers.';
+            sendToChat('answers',name).then(function(r){
+              $('saved').textContent=r.listening?'Saved and sent to the chat. Look at the chat on the left: Skill Upgrade continues there.':'Saved. Go back to the chat and say "continue": Skill Upgrade writes the checks from your answers.';
+            }).catch(function(){$('saved').textContent='Saved. Go back to the chat and say "continue": Skill Upgrade writes the checks from your answers.'});
           }).catch(function(){$('saved').textContent='Could not save the answers. Run the upgrade in the chat first, then try again.'});
       };
       body.querySelector('h2').focus({preventScroll:true});
