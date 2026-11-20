@@ -32,6 +32,15 @@ Restart Claude Code, then run `/skill-check`. The view opens beside the chat, or
 
 **Needs** Python 3.10 or newer, or [uv](https://docs.astral.sh/uv/) if you have no Python. No packages. Tested on Windows. macOS and Linux should work the same way; reports are welcome.
 
+## Update
+
+```
+claude plugin marketplace update skill-check
+claude plugin update skill-check@skill-check
+```
+
+Then restart Claude Code or run `/reload-plugins`. In the desktop app: open the plugin area, choose **Marketplaces**, **Update marketplace**, then **Update now** on `skill-check`. The button is only active when a new version is out.
+
 ## Next step: Skill Upgrade
 
 Skill Check shows where you stand. **Skill Upgrade** is the paid next step: it writes the checks for you, asks only what it cannot work out, shows the proof, and can keep a skill in control. The offer and the buy page are inside Skill Check, on the fourth step.
