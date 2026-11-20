@@ -62,7 +62,11 @@ The authoring limits come from `config/conventions.skill_authoring.json`. See [C
 
 ## Part of Shipwright
 
-Skill Check is from the same author as [Shipwright](https://github.com/svenroth-ai/shipwright), an open-source harness that wraps the whole software lifecycle around Claude Code.
+> **Ship right, not just fast.**
+
+Skill Check is from the author of [Shipwright](https://github.com/svenroth-ai/shipwright), **the harness your AI follows**. AI can build your software now. The hard part is keeping it true to what you already decided, on every change, not just the first. On every change, Shipwright checks the work back against your baseline (requirements, architecture, past decisions) and won't let through a change that silently drops a requirement or reverses a call you already made. That is enforced in code, not left to the model to remember. It is built on Claude Code.
+
+Skill Check applies the same idea to your skills: a rule that only stands in the text is a request, a rule that code checks holds.
 
 ## License
 
