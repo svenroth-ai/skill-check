@@ -7,48 +7,8 @@ const MIN_PYTHON = '3.10' // the scripts use syntax from 3.10; the README says t
 
 type Summary = { skills: number; findings: number; hard: number; top: { skill: string; tokens: number }[] }
 
-type Model = {
-  steps: { id: string; label: string; state: 'done' | 'current' | 'later' }[]
-  skills: { name: string; verdict: string; headline: string }[]
-  selected: null | { name: string; verdict: string; sentences: string[] }
-  next: { label: string; why: string; prompt: string | null; available: boolean }
-}
-
-// What the pane shows comes from scripts/view_model.py (plain words, tested in Python). This file only draws
-// it and starts the next step: it holds no wording of its own.
-let model: Model | undefined
-let selected: string | undefined
-let env: { py: string[]; root: string } | undefined
-let note: string | undefined
-
-let seq = 0 // the newest request wins: a slow answer for an earlier press must not overwrite a later one
-let sent = false // one press sends one prompt, until the next draw
-
-const FAILED = 'The view could not be updated. Run /skill-check again.'
-
-async function loadModel($: any, want: string | undefined): Promise<void> {
-  if (!env) return
-  const mine = ++seq
-  const args = [...env.py, `${env.root}/scripts/view_model.py`, ...(want ? ['--skill', want] : [])]
-  try {
-    const r = await $.process.run(args, { timeoutMs: 20000 })
-    if (mine !== seq) return
-    if (r.exitCode === 0) {
-      model = JSON.parse(r.stdout) as Model
-      selected = want // only a successful load moves the choice
-      note = undefined
-    } else {
-      note = FAILED // never the raw error: it holds paths and tracebacks
-      $.ui.log(`skill-check view: ${r.stderr.trim()}`, { to: 'debug' })
-    }
-  } catch (err) {
-    if (mine !== seq) return
-    note = FAILED
-    $.ui.log(`skill-check view: ${String(err)}`, { to: 'debug' })
-  }
-  sent = false
-  $.ui.invalidate('ui.render')
-}
+// The page itself is served by scripts/serve.py and opened in a browser: a pane can only draw native elements
+// (text, buttons, links), it cannot embed a web page. So the pane is a signpost with one link.
 
 // A hot reload loses module variables. The pane then shows the prompt to run the command again, which is
 // the right fallback: nothing here is state worth keeping.
@@ -115,8 +75,6 @@ export const register: Register = on => {
     const parsed = parseSummary(scan.stdout)
     if (!parsed) return { text: 'The scan finished but returned no readable summary. Run: python scripts/check_skills.py' }
     summary = parsed
-    env = { py, root }
-    await loadModel($, undefined)
 
     if (!isServing) {
       isServing = true
@@ -133,62 +91,30 @@ export const register: Register = on => {
     }
     const isUp = await waitForServer($, py)
     const placed = await $.ui.open({ id: PANE, title: 'Skill Check' })
-    const head = `Scanned ${summary.skills} skills: ${summary.hard} hard findings.`
+    const head = `Skill Check scanned ${summary.skills} ${summary.skills === 1 ? 'skill' : 'skills'}` +
+      (summary.hard ? ` and found ${summary.hard} hard ${summary.hard === 1 ? 'finding' : 'findings'}.` : ' and found nothing that breaks a limit.')
     if (!isUp) {
-      return { text: `${head} The view could not start on ${URL} (is another program, or an older Skill Check, using port ${PORT}? Close it first). Run: python ${root}/scripts/serve.py --port <free port>` }
+      return { text: `${head}
+
+The Companion View could not start on ${URL}. Is another program, or an older Skill Check, using port ${PORT}? Close it first, or run: python ${root}/scripts/serve.py --port <free port>` }
     }
-    return { text: `${head} Full view: ${URL}` + (placed.isPlaced ? '' : ' (the panel is not drawn on this surface, use the link)') }
+    return { text: `${head}
+
+**Open the Companion View:** ${URL}
+
+Open it in your browser, or in Claude Code's built-in browser to show it in the panel on the right.` + (placed.isPlaced ? '' : ` (The panel is not drawn on this surface, use the link.)`) }
   })
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
-    const { Box, Text, Link, Button } = $.ui.resolve(e)
-    if (!model) return <Text dimColor>{note ?? 'Run /skill-check to scan.'}</Text>
-    const m = model
-    const mark = { done: '✓', current: '●', later: '○' }
-    const choose = (name: string | undefined) => {
-      void loadModel($, name)
-    }
-    const go = () => {
-      if (!m.next.prompt || sent) return
-      sent = true // a second press before the next draw does nothing
-      void $.prompt.submit({ text: m.next.prompt })
-    }
+    const { Box, Text, Link } = $.ui.resolve(e)
     return (
       <Box flexDirection="column">
-        {m.steps.map(s => (
-          <Text bold={s.state === 'current'} dimColor={s.state === 'later'}>
-            {mark[s.state]} {s.label}
-          </Text>
-        ))}
+        <Text bold>Skill Check</Text>
+        <Text>{summary ? `${summary.skills} ${summary.skills === 1 ? 'skill' : 'skills'} scanned. Everything stays on your computer.` : 'Run /skill-check to scan your skills.'}</Text>
         <Text> </Text>
-        {m.selected ? (
-          <Box flexDirection="column">
-            <Text bold>{m.selected.name}</Text>
-            <Text dimColor>{m.selected.verdict}</Text>
-            {m.selected.sentences.map(line => (
-              <Text>{line}</Text>
-            ))}
-            <Button key="back" onPress={() => choose(undefined)}>Back to all skills</Button>
-          </Box>
-        ) : (
-          <Box flexDirection="column">
-            <Text bold>Your skills</Text>
-            {m.skills.slice(0, 8).map(s => (
-              <Button key={s.name} onPress={() => choose(s.name)}>{s.name} <Text dimColor>{s.headline}</Text></Button>
-            ))}
-            {m.skills.length > 8 && <Text dimColor>and {m.skills.length - 8} more, in the full view</Text>}
-          </Box>
-        )}
+        <Link href={URL} label="Open Companion View" />
         <Text> </Text>
-        <Text>{m.next.why}</Text>
-        {m.next.prompt ? (
-          <Button key="next" variant="primary" onPress={go}>{m.next.label}</Button>
-        ) : (
-          <Text bold>{m.next.label}</Text>
-        )}
-        {note && <Text color="yellow">{note}</Text>}
-        <Text> </Text>
-        <Link href={URL} label="Open the full view" />
+        <Text dimColor>Opens the full view in your browser, or in Claude Code's built-in browser.</Text>
       </Box>
     )
   })
