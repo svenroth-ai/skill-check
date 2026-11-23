@@ -1,4 +1,4 @@
-"""Tests for scripts/upgrade_view.py and the /api/upgrade and /api/answers routes. Run: python -m unittest discover -s tests"""
+"""Tests for scripts/upgrade_view.py and the /api/upgrade and /api/skilltext routes. Run: python -m unittest discover -s tests"""
 import http.client
 import json
 import sys
@@ -39,16 +39,9 @@ class View(unittest.TestCase):
     def tearDown(self):
         self.tmp.cleanup()
 
-    def test_open_questions_carry_the_suggestion_and_a_saved_answer(self):
+    def test_open_questions_carry_the_suggestion(self):
         q = uv.questions(self.skill)
-        self.assertEqual([(x["ac"], x["suggest"], x["answer"]) for x in q], [("A2", "yes", None)])
-        uv.save_answers(self.skill, {"A2": "no"})
-        self.assertEqual(uv.questions(self.skill)[0]["answer"], "no")
-
-    def test_only_answers_to_open_questions_with_a_valid_choice_are_kept(self):
-        kept = uv.save_answers(self.skill, {"A2": "yes", "A1": "yes", "../x": "yes", "A3": "maybe"})
-        self.assertEqual(kept, {"A2": "yes"})
-        self.assertEqual(json.loads((self.skill / "baseline" / "answers.json").read_text(encoding="utf-8")), {"A2": "yes"})
+        self.assertEqual([(x["ac"], x["suggest"]) for x in q], [("A2", "yes")])
 
     def test_a_decided_question_is_no_longer_open(self):
         t = json.loads(json.dumps(TRACE))
@@ -131,22 +124,26 @@ class Route(unittest.TestCase):
         d = json.loads(self.req("GET", "/api/upgrade?name=bare", origin=None)[1])
         self.assertEqual((d["questions"], d["report"], d["stage"]), ([], None, "none"))
 
-    def test_answers_are_saved_for_open_questions_only(self):
-        s, b = self.req("POST", "/api/answers?name=demo", {"A2": "no", "A1": "yes"})
-        self.assertEqual((s, json.loads(b)["saved"]), (200, {"A2": "no"}))
-        self.assertEqual(json.loads((self.skill / "baseline" / "answers.json").read_text(encoding="utf-8")), {"A2": "no"})
-
-    def test_answers_from_another_site_or_host_are_refused(self):
-        self.assertEqual(self.req("POST", "/api/answers?name=demo", {"A2": "no"}, origin="http://evil.example")[0], 403)
-        self.assertEqual(self.req("POST", "/api/answers?name=demo", {"A2": "no"}, origin=None)[0], 403)
-        self.assertEqual(self.req("POST", "/api/answers?name=demo", {"A2": "no"}, host="evil.example")[0], 403)
+    def test_the_view_can_no_longer_save_answers(self):
+        self.assertEqual(self.req("POST", "/api/answers?name=demo", {"A2": "no"})[0], 404)
         self.assertFalse((self.skill / "baseline" / "answers.json").exists())
 
+    def test_a_post_from_another_site_or_host_is_refused(self):
+        self.assertEqual(self.req("POST", "/api/origin?name=demo", {"mine": False}, origin="http://evil.example")[0], 403)
+        self.assertEqual(self.req("POST", "/api/origin?name=demo", {"mine": False}, origin=None)[0], 403)
+        self.assertEqual(self.req("POST", "/api/origin?name=demo", {"mine": False}, host="evil.example")[0], 403)
+
     def test_bad_posts_are_refused(self):
-        self.assertEqual(self.req("POST", "/api/answers?name=demo", {"A2": "no"}, ctype="text/plain")[0], 404)
-        self.assertEqual(self.req("POST", "/api/answers?name=nope", {"A2": "no"})[0], 400)
-        self.assertEqual(self.req("POST", "/api/answers?name=demo", ["x"])[0], 400)
-        self.assertEqual(self.req("POST", "/api/answers?name=bare", {"A2": "no"})[0], 409)  # no baseline folder
+        self.assertEqual(self.req("POST", "/api/origin?name=demo", {"mine": False}, ctype="text/plain")[0], 404)
+        self.assertEqual(self.req("POST", "/api/origin?name=nope", {"mine": False})[0], 400)
+        self.assertEqual(self.req("POST", "/api/origin?name=demo", ["x"])[0], 400)
+
+    def test_skilltext_returns_the_marked_lines(self):
+        s, b = self.req("GET", "/api/skilltext?name=demo", origin=None)
+        d = json.loads(b)
+        self.assertEqual((s, d["file"]), (200, "SKILL.md"))
+        self.assertTrue(d["lines"] and set(d["lines"][0]) == {"t", "m"})
+        self.assertEqual(self.req("GET", "/api/skilltext?name=nope", origin=None)[0], 404)
 
     def test_a_user_can_say_a_skill_is_not_theirs_and_it_is_then_refused(self):
         from unittest import mock
@@ -155,7 +152,7 @@ class Route(unittest.TestCase):
         with mock.patch("pathlib.Path.home", return_value=home):
             s, b = self.req("POST", "/api/origin?name=demo", {"mine": False})
             self.assertEqual((s, json.loads(b)["origin"]), (200, {"kind": "foreign"}))
-            self.assertEqual(self.req("POST", "/api/answers?name=demo", {"A2": "no"})[0], 403)
+            self.assertEqual(self.req("POST", "/api/intent?name=demo", {"action": "upgrade"})[0], 400)
             self.assertEqual(self.req("POST", "/api/origin?name=demo", {"mine": "yes"})[0], 400)
             self.assertEqual(json.loads(self.req("POST", "/api/origin?name=demo", {"mine": True})[1])["origin"], {"kind": "own"})
         self.assertTrue((home / ".shipwright" / "skill-check" / "origin_marks.json").is_file())
@@ -170,8 +167,7 @@ class Route(unittest.TestCase):
         self.assertEqual(json.loads(b), {"text": 'Upgrade the skill "demo" with Skill Upgrade.'})
         self.assertEqual(json.loads(self.req("POST", "/api/intent/take", {})[1]), {})  # taken once
         self.assertTrue(json.loads(self.req("GET", "/api/intent/status", origin=None)[1])["listening"])  # it just asked
-        self.req("POST", "/api/intent?name=demo", {"action": "answers"})
-        self.assertIn("answered the questions", json.loads(self.req("POST", "/api/intent/take", {})[1])["text"])
+        self.assertEqual(self.req("POST", "/api/intent?name=demo", {"action": "answers"})[0], 400)  # questions are answered in the chat
 
 
 if __name__ == "__main__":

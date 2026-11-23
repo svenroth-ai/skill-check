@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Serve the Skill Check view on localhost (nothing leaves this machine; the only write is the answers file of a skill).
+"""Serve the Skill Check view on localhost (nothing leaves this machine; it writes only the origin marks of skills).
 
     python scripts/serve.py [--port 3920] [--out out]
 
@@ -10,7 +10,7 @@ Routes: /            the app (web/app.html)
         /api/skills   the numbers per skill (instructions, held by code, can add, text), the suggestion and the usage
         /api/skill?name=NAME  one skill with its parts
         /api/upgrade?name=NAME  the open questions and the report of an upgraded skill (scripts/upgrade_view.py)
-        POST /api/answers?name=NAME  save the owner's answers to the open questions (baseline/answers.json)
+        /api/skilltext?name=NAME  the lines of SKILL.md, each marked by what code can do about it (scripts/skill_text.py)
         /api/classified  every classified inventory (out/classify/*.inventory.json), keyed by skill
 Binds to 127.0.0.1 only. Exit codes: 0 stopped; 2 port in use.
 """
@@ -31,6 +31,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import skill_origin  # noqa: E402
 import skill_score  # noqa: E402
+import skill_text  # noqa: E402
 import skill_usage  # noqa: E402
 import upgrade_view  # noqa: E402
 import view_model  # noqa: E402
@@ -111,8 +112,7 @@ def buy_url() -> str:
 
 INTENT_TEXT = {  # what a click in the view says to the chat: fixed words, only the skill name is filled in
     "upgrade": 'Upgrade the skill "{skill}" with Skill Upgrade.',  # no leading slash: a plugin may not submit a command
-    "control": 'Keep control of the skill "{skill}".',
-    "answers": 'I answered the questions for the skill "{skill}" in the Companion View. Please continue.',
+    "control": 'Keep control of the skill "{skill}" with Skill Upgrade.',
 }
 LISTEN_SECONDS = 8  # the chat side counts as listening when it asked for work this recently
 
@@ -163,6 +163,11 @@ def make_handler(out: Path, roots: list[Path] | None = None, projects: Path | No
                 if row is None:
                     return self._send(404, b"no such skill", "text/plain; charset=utf-8")
                 return self._json(decorated(out, roots, name, row))
+            if path == "/api/skilltext":
+                d = skill_path(roots, urllib.parse.parse_qs(query).get("name", [""])[0])
+                if d is None:
+                    return self._send(404, b"no such skill", "text/plain; charset=utf-8")
+                return self._json(skill_text.marked(d))
             if path == "/api/upgrade":
                 name = urllib.parse.parse_qs(query).get("name", [""])[0]
                 d = skill_path(roots, name)
@@ -189,13 +194,13 @@ def make_handler(out: Path, roots: list[Path] | None = None, projects: Path | No
             host = (self.headers.get("Host") or "").rsplit(":", 1)[0].strip("[]")
             origin = urllib.parse.urlparse(self.headers.get("Origin") or "")
             same = origin.hostname in ALLOWED_HOSTS and origin.netloc == self.headers.get("Host")
-            if host not in ALLOWED_HOSTS or not same:  # a page on another site must not write answers
+            if host not in ALLOWED_HOSTS or not same:  # a page on another site must not write anything
                 return self._send(403, b"forbidden", "text/plain; charset=utf-8")
             path, _, query = self.path.partition("?")
             if path == "/api/intent/take":  # the chat side asks for the next click
                 seen["at"] = time.monotonic()
                 return self._json({"text": queue.pop(0)} if queue else {})
-            if path not in ("/api/answers", "/api/origin", "/api/intent") or not (self.headers.get("Content-Type") or "").startswith("application/json"):
+            if path not in ("/api/origin", "/api/intent") or not (self.headers.get("Content-Type") or "").startswith("application/json"):
                 return self._send(404, b"not found", "text/plain; charset=utf-8")
             d = skill_path(roots, urllib.parse.parse_qs(query).get("name", [""])[0])
             try:
@@ -219,11 +224,7 @@ def make_handler(out: Path, roots: list[Path] | None = None, projects: Path | No
                     return self._send(403, b"a plugin skill cannot be claimed", "text/plain; charset=utf-8")
                 skill_origin.set_mark(d.name, body["mine"])
                 return self._json({"origin": skill_origin.origin(d)})
-            if skill_origin.origin(d)["kind"] != "own":
-                return self._send(403, b"this skill is not yours and cannot be changed here", "text/plain; charset=utf-8")
-            if not (d / "baseline").is_dir():
-                return self._send(409, b"this skill has no baseline yet", "text/plain; charset=utf-8")
-            self._json({"saved": upgrade_view.save_answers(d, body)})
+            return self._send(404, b"not found", "text/plain; charset=utf-8")
 
         def _json(self, obj) -> None:
             self._send(200, json.dumps(obj, ensure_ascii=False).encode("utf-8"), "application/json; charset=utf-8")

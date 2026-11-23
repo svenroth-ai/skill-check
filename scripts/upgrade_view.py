@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""What the Questions and Report pages of the view show for one skill (read only, except save_answers).
+"""What the Questions and Report pages of the view show for one skill (read only).
 
 The facts come from the skill's own baseline folder, written by Skill Upgrade:
   trace.json    the instructions (requirements and acceptance criteria), their checks and decisions
   grill.json    the open questions, each with a plain explanation and a suggested answer
-  answers.json  the answers the owner gave in the view ({"AC-id": "yes" | "no"}); Skill Upgrade applies them
   status.json   (in the Skill Check data folder) the stage and, per criterion, the result of trace_check.py
 Nothing here runs a skill's code: a result is only reported when trace_check.py wrote it.
 """
@@ -17,7 +16,6 @@ from pathlib import Path
 import skill_origin
 import skill_score
 
-CHOICES = ("yes", "no")
 SAFE_AC = re.compile(r"[\w.-]{1,64}")
 
 
@@ -28,35 +26,19 @@ def _json(p: Path):
         return None
 
 
-def load_answers(skill: Path) -> dict[str, str]:
-    raw = _json(skill / "baseline" / "answers.json")
-    return {k: v for k, v in raw.items() if isinstance(k, str) and v in CHOICES} if isinstance(raw, dict) else {}
-
-
 def questions(skill: Path) -> list[dict]:
     grill, trace = _json(skill / "baseline" / "grill.json"), _json(skill / "baseline" / "trace.json")
     if not isinstance(grill, dict) or not isinstance(trace, dict):
         return []
     done = {a["id"] for r in trace.get("requirements", []) for a in r.get("acs", [])
             if isinstance(a, dict) and (a.get("decision") or any(not c.get("proposed") for c in skill_score.ca.as_list(a.get("check"))))}
-    given = load_answers(skill)
     out = []
     for batch in grill.get("batches", []):
         for q in batch:
             if isinstance(q, dict) and q.get("ac") and q["ac"] not in done:
                 out.append({"ac": q["ac"], "text": q.get("text", ""), "why": q.get("why", ""),
-                            "suggest": "no" if str(q.get("suggest", "")).lower().startswith("no") else "yes",
-                            "answer": given.get(q["ac"])})
+                            "suggest": "no" if str(q.get("suggest", "")).lower().startswith("no") else "yes"})
     return out
-
-
-def save_answers(skill: Path, answers: dict) -> dict[str, str]:
-    """Keep only answers to questions that are really open; anything else is dropped."""
-    valid = {q["ac"] for q in questions(skill)}
-    clean = {k: v for k, v in answers.items() if isinstance(k, str) and k in valid and v in CHOICES}
-    p = skill / "baseline" / "answers.json"
-    p.write_text(json.dumps(clean, ensure_ascii=False, indent=1), encoding="utf-8")
-    return clean
 
 
 def report(skill: Path, status: dict | None) -> dict | None:

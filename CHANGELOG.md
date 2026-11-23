@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Read the text of a skill: on the page of each skill, "Read the text of this skill" shows its SKILL.md with every instruction marked: code can hold it, code holds it today, or it stays text.
+- The Upgrade page has one Start button and shows the next step after it. The command to type is tucked away under "Start it by hand instead". Questions are asked in the chat, so the view no longer has a questions page.
+- The summary card shows three numbers on one line; the legend under the bar carries the counts.
 - Keep control (Level 3): fifth step in the navigation. Pages: choose an upgraded skill, explanation, the written list with its tests, result. Skill Upgrade (new step 8) saves the written list as the agreement and marks the skill as in control; its check names, in plain words, each instruction that no longer holds, and a hook runs it after every edit to the skill.
 - Levels: the view reads the level of every skill (1 Written, 2 Enforced, 3 In control) and marks where your skills are on the start page and the report (tick for reached levels, cross for open ones).
 - Skills from a plugin (marketplace) are recognised by their real path, shown as "From a plugin", and never upgraded or changed: Skill Upgrade refuses them and the answers route refuses.
