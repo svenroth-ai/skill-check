@@ -1,6 +1,6 @@
 {
   "name": "skill-check",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "Reads your Claude skills on this machine, shows which rules are enforced and which only written, and checks them against the skill authoring limits.",
   "author": {
     "name": "Sven Roth"

@@ -166,6 +166,9 @@ tr.total td{background:#f7f5ef;font-weight:700}
 .doc{margin-top:var(--s2);padding:var(--s2) 0;max-width:80ch;font-size:var(--fs-m);line-height:1.55}
 .doc .ln{padding:1px 12px;border-left:5px solid transparent;border-radius:3px;white-space:pre-wrap;overflow-wrap:anywhere}
 .doc .gap{height:10px}
+.doc .li{display:flex;gap:8px}.doc .li .bu{flex:none;min-width:1.1em;color:var(--muted)}
+.doc .doc-tbl{margin:var(--s1) 0;font-size:var(--fs-s)}.doc .doc-tbl td,.doc .doc-tbl th{vertical-align:top;overflow-wrap:anywhere}
+.doc tr.m-hold td{background:#fdf1e8}.doc tr.m-held td{background:#eaf6ee}.doc tr.m-text td{background:#f3f1ea}
 .doc h4{margin:var(--s2) 0 4px;padding:0 12px;font-size:var(--fs-l)}
 .doc pre.ln{font-family:var(--mono,ui-monospace,monospace);font-size:var(--fs-s);background:#f3f1ea}
 .doc .m-held{border-left-color:#8fd0aa;background:#eaf6ee}
@@ -589,19 +592,36 @@ i[data-agent],i[data-host]{font-style:normal}
     return h;
   }
   function inline(t){return esc(t).replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>')}
+  function cells(t){return t.trim().replace(/^\|/,'').replace(/\|$/,'').split('|').map(function(c){return c.trim()})}
   function renderDoc(d){
-    var out='',code=false,front=0;
-    d.lines.forEach(function(l,i){
-      var t=l.t,cls=l.m?' m-'+l.m:'';
-      if(i===0&&t.trim()==='---'){front=1;return}
-      if(front){if(t.trim()==='---')front=0;return}
-      if(/^\s*```/.test(t)){code=!code;return}
-      if(code){out+='<pre class="ln'+cls+'">'+esc(t)+'</pre>';return}
-      if(!t.trim()){out+='<div class="gap"></div>';return}
+    var out='',code=false,front=0,L=d.lines,i;
+    for(i=0;i<L.length;i++){
+      var t=L[i].t,cls=L[i].m?' m-'+L[i].m:'';
+      if(i===0&&t.trim()==='---'){front=1;continue}
+      if(front){if(t.trim()==='---')front=0;continue}
+      if(/^\s*```/.test(t)){code=!code;continue}
+      if(code){out+='<pre class="ln'+cls+'">'+esc(t)+'</pre>';continue}
+      if(!t.trim()){out+='<div class="gap"></div>';continue}
+      if(/^\s*\|/.test(t)){
+        var rows=[];
+        while(i<L.length&&/^\s*\|/.test(L[i].t)){rows.push(L[i]);i++}
+        i--;
+        var head=cells(rows[0].t),body=rows.slice(/^[\s|:-]+$/.test(rows[1]&&rows[1].t||'x')?2:1);
+        out+='<div class="tw"><table class="tbl doc-tbl"><thead><tr>'+head.map(function(c){return '<th scope="col">'+inline(c)+'</th>'}).join('')+'</tr></thead><tbody>'+
+          body.map(function(r){return '<tr class="'+(r.m?'m-'+r.m:'')+'">'+cells(r.t).map(function(c){return '<td>'+inline(c)+'</td>'}).join('')+'</tr>'}).join('')+'</tbody></table></div>';
+        continue;
+      }
       var h=/^#{1,6}\s+(.*)$/.exec(t);
-      if(h){out+='<h4>'+inline(h[1])+'</h4>';return}
-      out+='<div class="ln'+cls+'">'+inline(t.replace(/^(\s*)[-*]\s+/,'$1• '))+'</div>';
-    });
+      if(h){out+='<h4>'+inline(h[1])+'</h4>';continue}
+      var li=/^(\s*)([-*]|\d+[.)])\s+(.*)$/.exec(t);
+      if(li){
+        var depth=Math.floor(li[1].replace(/\t/g,'    ').length/2);
+        out+='<div class="ln li'+cls+'" style="padding-left:'+(12+depth*20)+'px"><span class="bu">'+(/\d/.test(li[2])?esc(li[2]):'•')+'</span><span>'+inline(li[3])+'</span></div>';
+        continue;
+      }
+      var ind=Math.floor(t.match(/^\s*/)[0].replace(/\t/g,'    ').length/2);
+      out+='<div class="ln'+cls+'"'+(ind?' style="padding-left:'+(12+ind*20)+'px"':'')+'>'+inline(t.trim())+'</div>';
+    }
     return '<div class="doc-key"><span class="m-hold">Code can hold this</span><span class="m-held">Code holds this today</span><span class="m-text">Stays text, needs your judgment</span></div><div class="doc">'+out+'</div>';
   }
   function skillText(name){

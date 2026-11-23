@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- The text of a skill is drawn with tables and nested lists, so bullets sit at the right depth.
 - Read the text of a skill: on the page of each skill, "Read the text of this skill" shows its SKILL.md with every instruction marked: code can hold it, code holds it today, or it stays text.
 - The Upgrade page has one Start button and shows the next step after it. The command to type is tucked away under "Start it by hand instead". Questions are asked in the chat, so the view no longer has a questions page.
 - The summary card shows three numbers on one line; the legend under the bar carries the counts.

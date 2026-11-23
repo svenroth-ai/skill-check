@@ -48,7 +48,9 @@ def main() -> int:
     skills, out, proj = base / "skills", base / "out", base / "proj"
     (proj / "p1").mkdir(parents=True)
     out.mkdir()
-    make_skill(skills, "demo")
+    demo = make_skill(skills, "demo")
+    with open(demo / "SKILL.md", "a", encoding="utf-8") as f:  # a table and nested lists, to see them drawn
+        f.write("\n## Formats\n\n| Format | Ratio |\n|---|---|\n| Wide | 16:9 |\n| Tall | 9:16 |\n\n1. First step\n   - nested point\n   - another point\n2. Second step\n")
     make_skill(skills, "calm", PLAIN, script=False)
     line = json.dumps({"type": "user", "timestamp": "2999-01-01T00:00:00Z",
                        "message": {"content": "<command-name>/demo</command-name>"}})
@@ -123,6 +125,9 @@ def main() -> int:
             page.wait_for_selector("details.skill-text")
             page.click("details.skill-text summary")
             page.wait_for_selector("details.skill-text .doc .ln")
+            check(page.locator("details.skill-text .doc table.doc-tbl tbody tr").count() == 2, f"{label}: a table in the skill text is drawn as a table")
+            pads = page.evaluate("[...document.querySelectorAll('.doc .li')].map(e => parseInt(e.style.paddingLeft))")
+            check(len(pads) >= 4 and max(pads) > min(pads), f"{label}: nested list items are indented: {pads}")
             check(page.locator("details.skill-text .doc-key").count() == 1, f"{label}: the skill text comes with its key")
             check(page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1"), f"{label}: skill text has no horizontal scroll")
             page.goto(url + "#/done/demo")
