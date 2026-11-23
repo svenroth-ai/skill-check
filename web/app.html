@@ -155,6 +155,7 @@ tr.total td{background:#f7f5ef;font-weight:700}
 .summary{display:grid;gap:var(--s3)}
 .stats{display:grid;grid-template-columns:2fr 1.4fr 1fr;align-items:end}
 .stats.three{grid-template-columns:2fr 1fr 1fr}
+.stats.three .cap{min-height:2.7em}
 .stats>div{padding:0 var(--s2);border-left:1px solid var(--hair);display:flex;flex-direction:column;justify-content:flex-end}
 .stats>div:first-child{border-left:0;padding-left:0}
 .stats .num{font-size:30px;font-weight:700;line-height:1.1;letter-spacing:-.02em}
@@ -163,22 +164,25 @@ tr.total td{background:#f7f5ef;font-weight:700}
 .stats .main .cap{font-weight:700;color:var(--orange-d)}
 .stats .two .num{font-size:clamp(32px,5cqw,44px);color:var(--green-d)}
 .stats .two .cap{font-weight:700;color:var(--green-d)}
-.doc{margin-top:var(--s2);padding:var(--s2) 0;max-width:80ch;font-size:var(--fs-m);line-height:1.55}
-.doc .ln{padding:1px 12px;border-left:5px solid transparent;border-radius:3px;white-space:pre-wrap;overflow-wrap:anywhere}
-.doc .gap{height:10px}
-.doc .li{display:flex;gap:8px}.doc .li .bu{flex:none;min-width:1.1em;color:var(--muted)}
-.doc .doc-tbl{margin:var(--s1) 0;font-size:var(--fs-s)}.doc .doc-tbl td,.doc .doc-tbl th{vertical-align:top;overflow-wrap:anywhere}
-.doc tr.m-hold td{background:#fdf1e8}.doc tr.m-held td{background:#eaf6ee}.doc tr.m-text td{background:#f3f1ea}
-.doc h4{margin:var(--s2) 0 4px;padding:0 12px;font-size:var(--fs-l)}
-.doc pre.ln{font-family:var(--mono,ui-monospace,monospace);font-size:var(--fs-s);background:#f3f1ea}
-.doc .m-held{border-left-color:#8fd0aa;background:#eaf6ee}
-.doc .m-hold{border-left-color:#f2bd9b;background:#fdf1e8}
-.doc .m-text{border-left-color:#c9c4b6;background:#f3f1ea}
+.md{font-size:16px;line-height:1.6;color:#1f2328;overflow-wrap:break-word;padding-top:var(--s2)}
+.md>:first-child{margin-top:0}
+.md h1,.md h2{padding-bottom:.3em;border-bottom:1px solid #d1d9e0;margin:28px 0 16px;font-weight:600;line-height:1.25}
+.md h1{font-size:2em}.md h2{font-size:1.5em}.md h3{font-size:1.25em;margin:24px 0 16px;font-weight:600}.md h4,.md h5,.md h6{font-size:1em;margin:24px 0 16px;font-weight:600}
+.md p,.md ul,.md ol,.md pre,.md table,.md blockquote{margin:0 0 16px}
+.md ul,.md ol{padding-left:2em}.md li+li{margin-top:.25em}.md li>ul,.md li>ol{margin:.25em 0 0}
+.md code{background:#eff1f3;border-radius:6px;padding:.2em .4em;font-size:85%;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.md pre{background:#f6f8fa;border-radius:6px;padding:16px;overflow:auto;font-size:85%;line-height:1.45}.md pre code{background:none;padding:0;font-size:100%}
+.md blockquote{padding:0 1em;color:#59636e;border-left:.25em solid #d1d9e0}.md blockquote>:last-child{margin-bottom:0}
+.md table{border-collapse:collapse;display:table;width:auto;max-width:100%}
+.md table{border-spacing:0;border-radius:0;box-shadow:none;background:none}.md thead,.md tbody{background:none}
+.md th,.md td{padding:6px 13px;border:1px solid #d1d9e0;vertical-align:top;background:none;font:inherit;font-size:inherit;text-transform:none;letter-spacing:normal;color:inherit;text-align:left;border-radius:0}.md th{font-weight:600}.md tbody tr:nth-child(2n) td{background:#f6f8fa}
+.md hr{border:0;border-top:1px solid #d1d9e0;margin:24px 0}.md a{color:#0969da}
 dialog#skill-dialog{width:min(1000px,94vw);max-height:90vh;padding:0;border:0;border-radius:18px;box-shadow:0 24px 80px rgba(0,0,0,.35);background:#fff;color:var(--ink)}
 dialog#skill-dialog::backdrop{background:rgba(20,18,14,.55)}
 .dlg-head{position:sticky;top:0;z-index:1;display:flex;justify-content:space-between;align-items:center;gap:var(--s2);padding:var(--s2) var(--s3);background:#fff;border-bottom:1px solid var(--hair)}
 .dlg-body{padding:0 var(--s3) var(--s3);overflow:auto;max-height:calc(90vh - 70px)}
-.dlg-body .doc{max-width:none}
+.abstract{font-size:var(--fs-l);line-height:1.5;max-width:70ch;margin:0 0 var(--s2)}
+details.sections{margin:0 0 var(--s2)}details.sections h3{margin:var(--s2) 0 4px;font-size:var(--fs-m)}details.sections p{margin:0;max-width:70ch}
 .linkbtn{background:none;border:0;padding:0;font:inherit;color:var(--teal);text-decoration:underline;cursor:pointer}
 .open-doc{margin:var(--s2) 0 0;font-size:var(--fs-s);color:var(--muted)}
 ul.take{margin:0;padding-left:1.1em}ul.take li{margin:2px 0}
@@ -596,9 +600,10 @@ i[data-agent],i[data-host]{font-style:normal}
     var rest=r.parts.filter(function(p){return p.status!=='upgrade'});
     var h='';
     if(todo.length){
-      h+='<div class="tw"><table class="tbl"><thead><tr><th scope="col">Part of the skill</th><th scope="col">Instructions code can take over</th><th scope="col">Status</th></tr></thead><tbody>'+
+      h+='<div class="tw"><table class="tbl"><thead><tr><th scope="col">Part</th><th scope="col">Instructions code can take over</th><th scope="col">Status</th></tr></thead><tbody>'+
         todo.map(function(p){return '<tr class="row"><td class="name">'+esc(p.name)+(p.file&&p.file!=='SKILL.md'?' <span class="note">'+esc(p.file)+'</span>':'')+' '+pill(r.origin&&notOwn(r.origin)?'none':'upgrade')+'</td><td class="wide" data-label="Instructions code can take over">'+takeOver(p,r.skill)+'</td><td class="status">'+pill(notOwn(r.origin)?'none':'upgrade')+'</td></tr>'}).join('')+
-        '</tbody></table></div>';
+        '</tbody></table></div>'+
+        '<p class="open-doc"><button type="button" class="linkbtn" data-open-doc="'+esc(r.skill)+'">Open the SKILL.md</button> to read the whole text.</p>';
     }
     if(rest.length){
       h+='<details><summary>Show the other '+rest.length+' '+plural(rest.length,'part','parts')+' (good as they are)</summary>'+
@@ -606,40 +611,56 @@ i[data-agent],i[data-host]{font-style:normal}
     }
     return h;
   }
-  function inline(t){return esc(t).replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>')}
+  function inline(t){
+    return esc(t).replace(/\\([\\`*_{}\[\]()#+\-.!|~>])/g,'$1').replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>')
+      .replace(/(^|[^*\w])\*([^*\s][^*]*)\*/g,'$1<i>$2</i>')
+      .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g,function(m,a,u){return /^https?:/.test(u)?'<a href="'+u+'" target="_blank" rel="noopener">'+a+'</a>':a});
+  }
   function cells(t){return t.trim().replace(/^\|/,'').replace(/\|$/,'').split('|').map(function(c){return c.trim()})}
-  function renderDoc(d){
-    var out='',code=false,front=0,L=d.lines,i;
-    for(i=0;i<L.length;i++){
-      var t=L[i].t,cls=L[i].m?' m-'+L[i].m:'';
-      if(i===0&&t.trim()==='---'){front=1;continue}
-      if(front){if(t.trim()==='---')front=0;continue}
-      if(/^\s*```/.test(t)){code=!code;continue}
-      if(code){out+='<pre class="ln'+cls+'">'+esc(t)+'</pre>';continue}
-      if(!t.trim()){out+='<div class="gap"></div>';continue}
-      if(/^\s*\|/.test(t)){
-        var rows=[];
-        while(i<L.length&&/^\s*\|/.test(L[i].t)){rows.push(L[i]);i++}
-        i--;
-        var head=cells(rows[0].t),body=rows.slice(/^[\s|:-]+$/.test(rows[1]&&rows[1].t||'x')?2:1);
-        var ncol=body.reduce(function(n,r){return Math.max(n,cells(r.t).length)},head.length);
-        while(head.length<ncol)head.push('');
-        out+='<div class="tw"><table class="tbl doc-tbl"><thead><tr>'+head.map(function(c){return '<th scope="col">'+inline(c)+'</th>'}).join('')+'</tr></thead><tbody>'+
-          body.map(function(r){return '<tr class="'+(r.m?'m-'+r.m:'')+'">'+cells(r.t).map(function(c){return '<td>'+inline(c)+'</td>'}).join('')+'</tr>'}).join('')+'</tbody></table></div>';
-        continue;
-      }
-      var h=/^#{1,6}\s+(.*)$/.exec(t);
-      if(h){out+='<h4>'+inline(h[1])+'</h4>';continue}
-      var li=/^(\s*)([-*]|\d+[.)])\s+(.*)$/.exec(t);
-      if(li){
-        var depth=Math.floor(li[1].replace(/\t/g,'    ').length/2);
-        out+='<div class="ln li'+cls+'" style="padding-left:'+(12+depth*20)+'px"><span class="bu">'+(/\d/.test(li[2])?esc(li[2]):'•')+'</span><span>'+inline(li[3])+'</span></div>';
-        continue;
-      }
-      var ind=Math.floor(t.match(/^\s*/)[0].replace(/\t/g,'    ').length/2);
-      out+='<div class="ln'+cls+'"'+(ind?' style="padding-left:'+(12+ind*20)+'px"':'')+'>'+inline(t.trim())+'</div>';
+  var LI=/^(\s*)([-*+]|\d+[.)])\s+(.*)$/;
+  function mdList(L,i){
+    var items=[],out='',stack=[];
+    while(i<L.length){
+      var m=LI.exec(L[i]);
+      if(m){items.push({d:m[1].replace(/\t/g,'    ').length,o:/\d/.test(m[2]),t:m[3]});i++;continue}
+      if(L[i].trim()&&/^\s{2,}\S/.test(L[i])&&items.length&&!/^\s*(```|\||>|#)/.test(L[i])){items[items.length-1].t+=' '+L[i].trim();i++;continue}
+      if(!L[i].trim()&&i+1<L.length&&LI.test(L[i+1])){i++;continue}
+      break;
     }
-    return '<div class="doc-key"><span class="m-hold">Code can hold this</span><span class="m-held">Code holds this today</span><span class="m-text">Stays text, needs your judgment</span></div><div class="doc">'+out+'</div>';
+    items.forEach(function(it){
+      while(stack.length&&it.d<stack[stack.length-1].d)out+='</li></'+stack.pop().tag+'>';
+      if(!stack.length||it.d>stack[stack.length-1].d){var tag=it.o?'ol':'ul';stack.push({d:it.d,tag:tag});out+='<'+tag+'><li>'+inline(it.t)}
+      else out+='</li><li>'+inline(it.t);
+    });
+    while(stack.length)out+='</li></'+stack.pop().tag+'>';
+    return [out,i];
+  }
+  var BLOCK=/^\s*(```|#{1,6}\s|\||>|([-*_])\2\2+\s*$|([-*+]|\d+[.)])\s)/;
+  function mdRender(text){
+    var L=text.replace(/\r/g,'').split('\n'),i=0,out='',t,m;
+    if(L[0]&&L[0].trim()==='---'){var k=1;while(k<L.length&&L[k].trim()!=='---')k++;i=k+1}
+    while(i<L.length){
+      t=L[i];
+      if(!t.trim()){i++;continue}
+      if(/^\s*```/.test(t)){var c=[];i++;while(i<L.length&&!/^\s*```/.test(L[i])){c.push(L[i]);i++}i++;out+='<pre><code>'+esc(c.join('\n'))+'</code></pre>';continue}
+      if((m=/^(#{1,6})\s+(.*)$/.exec(t))){out+='<h'+m[1].length+'>'+inline(m[2])+'</h'+m[1].length+'>';i++;continue}
+      if(/^\s*([-*_])\1\1+\s*$/.test(t)){out+='<hr>';i++;continue}
+      if(/^\s*\|/.test(t)){
+        var rows=[];while(i<L.length&&/^\s*\|/.test(L[i])){rows.push(L[i]);i++}
+        var sep=rows.length>1&&/^[\s|:-]+$/.test(rows[1]),head=cells(rows[0]),body=rows.slice(sep?2:1).map(cells);
+        var n=body.reduce(function(a,r){return Math.max(a,r.length)},head.length);
+        while(head.length<n)head.push('');
+        out+='<table><thead><tr>'+head.map(function(x){return '<th>'+inline(x)+'</th>'}).join('')+'</tr></thead><tbody>'+
+          body.map(function(r){var a=r.slice();while(a.length<n)a.push('');return '<tr>'+a.map(function(x){return '<td>'+inline(x)+'</td>'}).join('')+'</tr>'}).join('')+'</tbody></table>';
+        continue;
+      }
+      if(/^\s*>/.test(t)){var q=[];while(i<L.length&&/^\s*>/.test(L[i])){q.push(L[i].replace(/^\s*>\s?/,''));i++}out+='<blockquote>'+mdRender(q.join('\n'))+'</blockquote>';continue}
+      if(LI.test(t)){var r=mdList(L,i);out+=r[0];i=r[1];continue}
+      var para=[];
+      while(i<L.length&&L[i].trim()&&(!para.length||!BLOCK.test(L[i]))){para.push(L[i].trim());i++}
+      out+='<p>'+inline(para.join(' '))+'</p>';
+    }
+    return out;
   }
   function openSkillText(name){
     var dlg=$('skill-dialog');
@@ -654,7 +675,7 @@ i[data-agent],i[data-host]{font-style:normal}
     $('skill-dialog-body').innerHTML='<p class="sub tight" role="status">Reading...</p>';
     if(!dlg.open)dlg.showModal();
     get('/api/skilltext?name='+encodeURIComponent(name)).then(function(d){
-      $('skill-dialog-body').innerHTML=d.lines.length?renderDoc(d):'<p class="sub">This skill has no SKILL.md to show.</p>';
+      $('skill-dialog-body').innerHTML=d.text?'<div class="md">'+mdRender(d.text)+'</div>':'<p class="sub">This skill has no SKILL.md to show.</p>';
     }).catch(function(){$('skill-dialog-body').innerHTML='<p class="sub">The text could not be read.</p>'});
   }
   function drawCheck(name){
@@ -668,14 +689,18 @@ i[data-agent],i[data-host]{font-style:normal}
       if(!r.total){
         body.innerHTML=h+'<p class="sub">No instructions were found in this skill, so there is nothing for code to hold.</p>';
       }else{
-        body.innerHTML=h+'<p class="sub">'+(notOwn(r.origin)?'This skill has ':'You wrote ')+r.total+' '+plural(r.total,'instruction','instructions')+'. Code can hold '+r.hold+' of them. Today it holds '+r.enforced+'.</p>'+
+        body.innerHTML=h+'<div id="summary"></div><p class="sub">'+(notOwn(r.origin)?'This skill has ':'You wrote ')+r.total+' '+plural(r.total,'instruction','instructions')+'. Code can hold '+r.hold+' of them. Today it holds '+r.enforced+'.</p>'+
           statsBlock(r)+
           (notOwn(r.origin)?'<p class="legend">'+originNote(r.origin)+'</p>':'')+claimButton(r)+
           (r.add>0&&!notOwn(r.origin)?'<div class="band cta"><div class="body"><p><b>We write the checks for you.</b> You only confirm the few that need your say.</p></div><a class="btn light big" href="#/upgrade/'+encodeURIComponent(r.skill)+'">Upgrade this skill</a></div>':'')+
           partsTable(r);
       }
       wireClaim(r.skill);
-      if(r.total){var od=document.createElement('p');od.className='open-doc';od.innerHTML='<button type="button" class="linkbtn" data-open-doc="'+esc(r.skill)+'">Open the SKILL.md</button> to read the whole text with every instruction marked.';body.appendChild(od)}
+      get('/api/summary?name='+encodeURIComponent(r.skill)).then(function(m){
+        var el=$('summary');if(!el||my!==seq)return;
+        el.innerHTML='<p class="abstract">'+esc(m.abstract)+'</p>'+(m.sections.length?'<details class="sections"><summary>What it does, section by section</summary>'+
+          m.sections.map(function(x){return '<h3>'+esc(x.name)+'</h3><p>'+esc(x.text)+'</p>'}).join('')+'</details>':'');
+      }).catch(function(){});
       body.querySelectorAll('[data-open-doc]').forEach(function(b){b.onclick=function(){openSkillText(b.dataset.openDoc)}});
       body.querySelectorAll('.band').forEach(glow);
       body.querySelectorAll('[data-to]').forEach(count);
@@ -685,6 +710,7 @@ i[data-agent],i[data-host]{font-style:normal}
   }
 
   /* ---------- upgrade it ---------- */
+  var upPoll=0;
   function drawUpgrade(name){
     chosen=name||chosen;setNav();
     var back=$('up-back'),inst=$('up-installed'),buy=$('up-buy');
@@ -697,25 +723,48 @@ i[data-agent],i[data-host]{font-style:normal}
         var cmd='/skill-upgrade'+(chosen?' '+chosen:'');
         inst.innerHTML='<h2 tabindex="-1" style="margin-top:0">Upgrade '+(chosen?esc(chosen):'a skill')+'</h2>'+
           '<p class="sub tight">Skill Upgrade is installed. Claude works in the chat on the left and asks you a few questions there. This page shows where you are and, at the end, the report.</p>'+
-          (chosen?'<p><button class="btn big" id="go-chat" type="button">Start</button> <span id="sent" role="status" class="note"></span></p>':'')+
-          '<div id="where"></div>'+
+          (chosen?'<div id="state"></div><p id="state-note" class="note" role="status"></p>':'')+
           '<details style="margin-top:var(--s3)"><summary class="note" style="cursor:pointer">Start it by hand instead</summary>'+
           '<p class="sub tight">Type this in the chat:</p><p><code id="cmd" style="font-size:17px">'+esc(cmd)+'</code></p>'+
           '<p style="margin-top:var(--s2)"><button class="btn" id="copy" type="button">Copy the command</button> <span id="copied" role="status" class="note"></span></p></details>';
-        var gc=$('go-chat');
-        if(gc)gc.onclick=function(){
-          gc.disabled=true;
-          sendToChat('upgrade',chosen).then(function(r){
-            $('sent').textContent=r.listening?'Started. Look at the chat on the left: Claude begins there. This page shows the next step.':'Started, but the chat did not pick it up. Open "Start it by hand instead" below.';
-            var tick=function(){if(location.hash.indexOf('#/upgrade')!==0)return;showWhere();setTimeout(tick,4000)};setTimeout(tick,4000);
-          }).catch(function(){gc.disabled=false;$('sent').textContent='That did not work. Type the command below.'});
-        };
-        var showWhere=function(){if(chosen)get('/api/upgrade?name='+encodeURIComponent(chosen)).then(function(u){
-          var w=$('where');if(!w)return;
-          var enc=encodeURIComponent(chosen);
-          if(u.questions.length)w.innerHTML='<p class="sub tight"><b>Claude is asking '+u.questions.length+' '+plural(u.questions.length,'question','questions')+' in the chat.</b> Answer there, on the left.</p>';
-          else if(u.report)w.innerHTML='<p class="sub tight"><b>A report is ready.</b></p><a class="btn" href="#/done/'+enc+'">Open the report</a>';
-        }).catch(function(){})};showWhere();
+        var started=false,last='',pid=++upPoll;
+        var STEPS=['Reading','Your questions','Tests','Report'];
+        function panel(u){
+          var k={none:-1,derived:0,questions:1,binding:2,ready:3}[u.stage];
+          if(k===undefined)k=0;
+          if(u.report)k=3;
+          if(k<0&&!started)return '<p><button class="btn big" id="go-chat" type="button">Start</button></p>';
+          var nav='<nav aria-label="Where the upgrade stands"><ol class="sub-steps">'+STEPS.map(function(l,i){
+            var c=i<k?'ok':i===k?'on':'';
+            return '<li class="'+c+'"><a'+(i===k?' aria-current="step"':'')+'><span class="sn">'+(i<k?'✓':i+1)+'</span>'+l+'</a></li>';
+          }).join('')+'</ol></nav>';
+          var n=u.questions.length,msg=k<0?'Started. Look at the chat on the left: Claude begins there.':
+            k===0?'Claude is reading your skill and sorting its instructions.':
+            k===1?'Claude is asking '+n+' '+plural(n,'question','questions')+' in the chat. Answer there, on the left.':
+            k===2?'Claude is writing a test for each instruction you agreed to.':
+            u.report?'The upgrade is done.':'Claude is finishing the report.';
+          return nav+'<p class="sub tight"><b>'+msg+'</b></p>'+(k===3&&u.report?'<a class="btn big" href="#/done/'+encodeURIComponent(chosen)+'">Open the report</a>':'');
+        }
+        function wire(){
+          var gc=$('go-chat');
+          if(gc)gc.onclick=function(){
+            gc.disabled=true;
+            sendToChat('upgrade',chosen).then(function(r){
+              started=true;
+              $('state-note').textContent=r.listening?'':'The chat did not pick it up. Open "Start it by hand instead" below.';
+              refresh();
+            }).catch(function(){gc.disabled=false;$('state-note').textContent='That did not work. Type the command below.'});
+          };
+        }
+        function refresh(){
+          if(pid!==upPoll||location.hash.indexOf('#/upgrade')!==0||!chosen)return;
+          get('/api/upgrade?name='+encodeURIComponent(chosen)).then(function(u){
+            if(pid!==upPoll)return;
+            var html=panel(u),st=$('state');
+            if(st&&html!==last){st.innerHTML=html;last=html;wire()}
+          }).catch(function(){});
+        }
+        if(chosen){refresh();(function loop(){setTimeout(function(){if(pid!==upPoll||location.hash.indexOf('#/upgrade')!==0)return;refresh();loop()},4000)})()}
         $('copy').onclick=function(){
           var done=function(){$('copied').textContent='Copied.'};
           if(navigator.clipboard)navigator.clipboard.writeText(cmd).then(done,function(){$('copied').textContent='Select the text and copy it.'});
@@ -835,47 +884,48 @@ i[data-agent],i[data-host]{font-style:normal}
     var body=$('cstart-body'),e=encodeURIComponent(name);
     chosen=name;setNav();
     body.innerHTML=csub(0,name)+'<h2 tabindex="-1">Keep '+esc(name)+' working as you improve it</h2>'+
-      '<p class="sub">You will keep improving this skill. The risk: one day something that worked yesterday stops working, because a change touched it quietly and nobody noticed. Keep control prevents that. We write down what the skill must do and tie a test to each line. From then on, every change is checked against that list, and you are told which line no longer holds.</p>'+
+      '<p class="sub">You will keep improving this skill. The risk: one day something that worked yesterday stops working, because a change touched it quietly and nobody noticed. Keep control prevents that. We write down what the skill does and tie a test to every section we can check. From then on, every change is checked against that list, and you are told which section no longer works.</p>'+
       '<ol class="ladder" id="cs-ladder" aria-label="Three levels of control">'+ladderHTML(2)+'</ol>'+
       '<div class="ctl"><div class="card"><h3 style="margin-top:0 !important">What happens when you press Go</h3><ol class="flow">'+
-      '<li><span class="sn" aria-hidden="true">1</span><div><b>You see the list we wrote down</b><p>One plain line for each instruction, grouped by the part of the skill it belongs to.</p></div></li>'+
-      '<li><span class="sn" aria-hidden="true">2</span><div><b>You see which lines have a test</b><p>Every line that code can hold has a test. That is what control means: it is written down, and a test holds it.</p></div></li>'+
+      '<li><span class="sn" aria-hidden="true">1</span><div><b>You read what the skill does</b><p>A short summary, then a few words for each section of the skill.</p></div></li>'+
+      '<li><span class="sn" aria-hidden="true">2</span><div><b>You see which sections have tests</b><p>Wherever code can check that the skill still works, there is a test. That is what control means: it is written down, and a test holds it.</p></div></li>'+
       '<li><span class="sn" aria-hidden="true">3</span><div><b>You turn it on in the chat</b><p>Skill Upgrade saves the list as the agreement and keeps the tests with the skill.</p></div></li>'+
       '<li><span class="sn" aria-hidden="true">4</span><div><b>From then on, changes are checked</b><p>After a change to this skill, the tests run and tell you which instruction no longer holds.</p></div></li></ol>'+
       '<p class="more">Nothing in your skill\'s behavior is changed. The list and the tests are saved next to the skill.</p>'+
       '<a class="btn big" href="#/control-list/'+e+'">Go</a></div></div>'+
       '<div class="next2" style="grid-template-columns:1fr"><div><h3>Not now?</h3><p>You can skip this and come back to it any time.</p><a class="btn alt" href="#/skills">Back to all skills</a></div></div>';
   }
+  function norm(t){return String(t||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}
   function drawControlList(name){
     var body=$('clist-body'),my=++seq,e=encodeURIComponent(name);
     chosen=name;setNav();
-    body.innerHTML='<p class="sub" role="status">Reading the list...</p>';
-    get('/api/upgrade?name='+e).then(function(u){
+    body.innerHTML='<p class="sub" role="status">Reading the skill...</p>';
+    Promise.all([get('/api/upgrade?name='+e),get('/api/summary?name='+e)]).then(function(rs){
       if(my!==seq)return;
-      var c=u.control,h=csub(1,name);
+      var u=rs[0],m=rs[1],c=u.control,h=csub(1,name);
       if(!c){
-        body.innerHTML=h+'<h2 tabindex="-1">Nothing to show yet</h2><p class="sub">The list appears after the upgrade has run its checks. Type <code>/skill-upgrade '+esc(name)+'</code> in the chat.</p><a class="btn big" href="#/upgrade/'+e+'">Back to the upgrade</a>';
+        body.innerHTML=h+'<h2 tabindex="-1">Nothing to show yet</h2><p class="sub">This page appears after the upgrade has run its tests. Start the upgrade for '+esc(name)+' first.</p><a class="btn big" href="#/upgrade/'+e+'">Back to the upgrade</a>';
         return;
       }
-      var t=c.totals;
-      h+='<h2 tabindex="-1">This is what control looks like</h2><p class="sub">Each part of the skill is written down, line by line. Every line that code can hold gets a test. A line that needs judgment is a prose instruction: it is written down and stays text.</p>'+
-        '<div class="card summary"><div class="stats three"><div><div class="num">'+t.lines+'</div><div class="cap">lines written down</div></div><div><div class="num">'+t.tests+'</div><div class="cap">have a test</div></div><div><div class="num">'+t.prose+'</div><div class="cap">prose instructions, as decided</div></div></div></div>'+
-        '<h3>The list, part by part</h3>'+
-        c.parts.map(function(p){
-          var n=p.lines.length;
-          return '<div class="card part"><div class="ph"><b>'+esc(p.name)+'</b><span>'+n+' '+plural(n,'line','lines')+', '+(p.tests?p.tests+' '+plural(p.tests,'test','tests'):'no test')+'</span></div><ul class="cmp">'+
-            p.lines.map(function(l){
-              var pl=l.kind==='test'?'<span class="pill done">Test</span>':l.kind==='prose'?'<span class="pill txt">Prose instruction</span>':'<span class="pill todo">No passing check</span>';
-              return '<li><span>'+esc(plain(l.text))+'</span>'+pl+'</li>';
-            }).join('')+'</ul></div>';
-        }).join('');
+      var t=c.totals,tested=0;
+      var tests={};c.parts.forEach(function(p){tests[norm(p.name)]=p.tests});
+      var secs=m.sections.map(function(x){
+        var n=tests[norm(x.name)];
+        if(n)tested++;
+        return '<div class="card part"><div class="ph"><b>'+esc(x.name)+'</b>'+(n===undefined?'':n?'<span class="pill done">Checked by '+n+' '+plural(n,'test','tests')+'</span>':'<span class="pill txt">Written text only</span>')+'</div><p style="margin:0">'+esc(x.text)+'</p></div>';
+      }).join('');
+      h+='<h2 tabindex="-1">What we keep</h2>'+
+        '<p class="sub">This is what <b>'+esc(name)+'</b> does, written down in plain words. It is the agreement between you and the skill. When you want to change the skill, you change this list on purpose first.</p>'+
+        '<p class="sub">The safety comes from the tests: for every part that code can check, we made a test. After a change, the tests run and tell you which part no longer works.</p>'+
+        '<div class="card"><p class="abstract" style="margin:0">'+esc(m.abstract)+'</p></div>'+
+        '<h3>Section by section</h3>'+secs+
+        '<p class="sub"><b>'+t.tests+' of '+t.lines+' '+plural(t.lines,'instruction','instructions')+' are held by a test.</b> The rest are written text, as you decided.</p>';
       if(t.open>0){
-        h+='<p class="legend">'+t.open+' '+plural(t.open,'line has','lines have')+' no passing check yet. Finish the upgrade first: control needs a passing check for every line that code can hold.</p><a class="btn big" href="#/upgrade/'+e+'" style="margin-top:var(--s1)">Back to the upgrade</a>';
+        h+='<p class="legend">'+t.open+' '+plural(t.open,'instruction has','instructions have')+' no passing test yet. Finish the upgrade first: control needs a passing test for every instruction that code can hold.</p><a class="btn big" href="#/upgrade/'+e+'" style="margin-top:var(--s1)">Back to the upgrade</a>';
       }else if(c.controlled_at){
         h+='<a class="btn big" href="#/control-done/'+e+'" style="margin-top:var(--s1)">Open the result</a>';
       }else{
-        h+='<p class="legend">Most of these tests exist already from the upgrade. What is new: the list is saved as the agreement between you and the skill, and the tests run again after every change.</p>'+
-          '<button class="btn big" id="turn-on" type="button" style="margin-top:var(--s1)">Turn on control</button>'+
+        h+='<button class="btn big" id="turn-on" type="button" style="margin-top:var(--s1)">Keep control</button>'+
           '<div id="turn-note" hidden class="card" style="margin-top:var(--s2)"><p style="margin:0 0 var(--s1)"><b>Say "keep control" in the chat.</b> Skill Upgrade saves the list and turns it on. Then check here:</p><p style="margin:0"><a class="btn" href="#/control-done/'+e+'">Check the result</a></p></div>';
       }
       body.innerHTML=h;

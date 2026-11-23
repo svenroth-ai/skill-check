@@ -138,12 +138,25 @@ class Route(unittest.TestCase):
         self.assertEqual(self.req("POST", "/api/origin?name=nope", {"mine": False})[0], 400)
         self.assertEqual(self.req("POST", "/api/origin?name=demo", ["x"])[0], 400)
 
-    def test_skilltext_returns_the_marked_lines(self):
-        s, b = self.req("GET", "/api/skilltext?name=demo", origin=None)
-        d = json.loads(b)
-        self.assertEqual((s, d["file"]), (200, "SKILL.md"))
-        self.assertTrue(d["lines"] and set(d["lines"][0]) == {"t", "m"})
+    def test_skilltext_returns_the_file_and_summary_what_the_skill_does(self):
+        d = json.loads(self.req("GET", "/api/skilltext?name=demo", origin=None)[1])
+        self.assertEqual(d["file"], "SKILL.md")
+        self.assertIn("caption", d["text"].lower())
         self.assertEqual(self.req("GET", "/api/skilltext?name=nope", origin=None)[0], 404)
+        s, b = self.req("GET", "/api/summary?name=demo", origin=None)
+        self.assertEqual(s, 200)
+        self.assertEqual(set(json.loads(b)), {"abstract", "sections", "source"})
+        self.assertEqual(self.req("GET", "/api/summary?name=nope", origin=None)[0], 404)
+
+    def test_the_stage_follows_answers_given_in_the_chat(self):
+        status = {"stage": {"name": "questions", "open": 1}}
+        self.assertEqual(uv.read(self.skill, status)["stage"], "questions")
+        t = json.loads(json.dumps(TRACE))
+        t["requirements"][0]["acs"][1]["decision"] = "text: stays written"
+        (self.skill / "baseline" / "trace.json").write_text(json.dumps(t), encoding="utf-8")
+        self.assertEqual(uv.read(self.skill, status)["stage"], "binding")
+        self.assertEqual(uv.read(self.skill, None)["stage"], "binding")
+        self.assertEqual(uv.read(self.skill, {"stage": {"name": "ready", "open": 0}})["stage"], "ready")
 
     def test_a_user_can_say_a_skill_is_not_theirs_and_it_is_then_refused(self):
         from unittest import mock

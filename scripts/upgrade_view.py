@@ -92,8 +92,24 @@ def control(skill: Path, status: dict | None) -> dict | None:
             "approved": isinstance(approved, dict)}
 
 
+def stage(skill: Path, status: dict | None, open_questions: int) -> tuple[str, int]:
+    """Where the upgrade stands, from the status file, corrected by what the skill's baseline folder says now:
+    a question answered in the chat moves the stage on before the next status file is written."""
+    st = (status or {}).get("stage") or {}
+    name, n = st.get("name", "none"), st.get("open", 0)
+    if name in ("none", "questions", "derived") and (skill / "baseline" / "trace.json").is_file():
+        if open_questions:
+            return "questions", open_questions
+        if name in ("none", "questions") and (skill / "baseline" / "grill.json").is_file():
+            return "binding", n
+        if name == "none":
+            return "derived", n
+    return name, n
+
+
 def read(skill: Path, status: dict | None) -> dict:
-    stage = (status or {}).get("stage") or {}
-    return {"skill": skill.name, "stage": stage.get("name", "none"), "open": stage.get("open", 0),
-            "questions": questions(skill), "report": report(skill, status), "control": control(skill, status),
+    qs = questions(skill)
+    name, n = stage(skill, status, len(qs))
+    return {"skill": skill.name, "stage": name, "open": n,
+            "questions": qs, "report": report(skill, status), "control": control(skill, status),
             "origin": skill_origin.origin(skill)}

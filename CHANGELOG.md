@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Every skill page starts with a short summary of what the skill does, and a list of its sections in a few words each. Skill Upgrade writes a better one in plain words; without it the summary comes from the skill's own description and headings.
+- "Open the SKILL.md" sits right under the parts table and shows the text the way GitHub does.
+- The Upgrade page knows where the upgrade stands (reading, your questions, tests, report), also when you answered in the chat. The Start button is only there before the upgrade begins.
+- Keep control shows what the skill does in plain words, section by section, with the tests that hold each section.
+- "Part of the skill" is now "Part".
 - The parts table lists the real instructions that code can take over, instead of a count. "Open the SKILL.md" shows the whole text in a window, with every instruction marked. Table headers in the text are filled to the width of the table.
 - The text of a skill is drawn with tables and nested lists, so bullets sit at the right depth.
 - Read the text of a skill: on the page of each skill, "Read the text of this skill" shows its SKILL.md with every instruction marked: code can hold it, code holds it today, or it stays text.

@@ -10,6 +10,7 @@ from __future__ import annotations
 import os
 
 import json
+import re
 import sys
 import tempfile
 import threading
@@ -113,10 +114,13 @@ def main() -> int:
             page.wait_for_selector("#up-installed:not([hidden])")
             check(page.locator("#cmd").text_content() == "/skill-upgrade demo" and not page.locator("#up-buy").is_visible(),
                   f"{label}: with Skill Upgrade installed the page gives the command, not the buy page")
-            page.wait_for_selector("#where")
-            where = page.locator("#where").inner_text()
-            check("in the chat" in where and page.locator("#where a").count() == 0, f"{label}: open questions are asked in the chat, the page only says so: {where!r}")
-            check(page.locator("#go-chat").inner_text() == "Start", f"{label}: one Start button")
+            page.wait_for_selector("#state .sub-steps")
+            where = page.locator("#state").inner_text()
+            check("The upgrade is done" in where and page.locator("#go-chat").count() == 0,
+                  f"{label}: an upgrade that ran shows where it stands and no Start button: {where!r}")
+            page.goto(url + "#/upgrade/calm")
+            page.wait_for_selector("#go-chat")
+            check(page.locator("#go-chat").inner_text() == "Start", f"{label}: a skill not yet upgraded has one Start button")
             page.goto(url + "#/ask/demo")
             page.wait_for_function("location.hash.startsWith('#/upgrade/')")
             check(True, f"{label}: the old questions page leads back to the upgrade page")
@@ -126,11 +130,11 @@ def main() -> int:
             check("can take over" in page.locator("#check-body table.tbl thead").inner_text().lower() and page.locator("#check-body ul.take li").count() >= 1,
                   f"{label}: the parts table lists the real instructions")
             page.click(".open-doc button")
-            page.wait_for_selector("dialog#skill-dialog[open] .doc .ln")
-            check(page.locator("dialog#skill-dialog .doc table.doc-tbl tbody tr").count() == 2, f"{label}: a table in the skill text is drawn as a table")
-            pads = page.evaluate("[...document.querySelectorAll('.doc .li')].map(e => parseInt(e.style.paddingLeft))")
-            check(len(pads) >= 4 and max(pads) > min(pads), f"{label}: nested list items are indented: {pads}")
-            check(page.locator("dialog#skill-dialog .doc-key").count() == 1, f"{label}: the skill text comes with its key")
+            page.wait_for_selector("dialog#skill-dialog[open] .md table")
+            check(page.locator("dialog#skill-dialog .md table tbody tr").count() == 2, f"{label}: a table in the skill text is drawn as a table")
+            heads = page.locator("dialog#skill-dialog .md table thead th").count()
+            check(heads == page.locator("dialog#skill-dialog .md table tbody tr").first.locator("td").count(), f"{label}: the table header has a cell for every column")
+            check(page.locator("dialog#skill-dialog .md ol ul li").count() == 2, f"{label}: nested list items are nested")
             check(page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1"), f"{label}: skill text has no horizontal scroll")
             page.goto(url + "#/done/demo")
             page.reload()
@@ -158,8 +162,9 @@ def main() -> int:
                   f"{label}: reached levels have a tick, the open one a cross")
             page.click("#cstart-body a.btn.big")
             page.wait_for_selector("#clist-body .part")
-            check(page.locator("#clist-body .summary .num").nth(1).inner_text() == "2", f"{label}: list shows the tests")
-            check(page.locator("#clist-body .pill:has-text('Prose instruction')").count() == 1, f"{label}: prose instruction is labelled")
+            check("What we keep" in page.locator("#clist-body h2").inner_text(), f"{label}: control shows what the skill does")
+            check(re.search(r"\b2 of \d+ instructions are held by a test", page.locator("#clist-body").inner_text()) is not None, f"{label}: control says how much a test holds")
+            check(page.locator("#clist-body .abstract").count() == 1, f"{label}: control starts with the short summary")
             page.click("#turn-on")
             page.wait_for_selector("#turn-note", state="visible", timeout=4000)
             check(page.locator("#turn-note").is_visible(), f"{label}: turning on points to the chat")
