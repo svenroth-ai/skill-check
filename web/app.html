@@ -174,6 +174,14 @@ tr.total td{background:#f7f5ef;font-weight:700}
 .doc .m-held{border-left-color:#8fd0aa;background:#eaf6ee}
 .doc .m-hold{border-left-color:#f2bd9b;background:#fdf1e8}
 .doc .m-text{border-left-color:#c9c4b6;background:#f3f1ea}
+dialog#skill-dialog{width:min(1000px,94vw);max-height:90vh;padding:0;border:0;border-radius:18px;box-shadow:0 24px 80px rgba(0,0,0,.35);background:#fff;color:var(--ink)}
+dialog#skill-dialog::backdrop{background:rgba(20,18,14,.55)}
+.dlg-head{position:sticky;top:0;z-index:1;display:flex;justify-content:space-between;align-items:center;gap:var(--s2);padding:var(--s2) var(--s3);background:#fff;border-bottom:1px solid var(--hair)}
+.dlg-body{padding:0 var(--s3) var(--s3);overflow:auto;max-height:calc(90vh - 70px)}
+.dlg-body .doc{max-width:none}
+.linkbtn{background:none;border:0;padding:0;font:inherit;color:var(--teal);text-decoration:underline;cursor:pointer}
+.open-doc{margin:var(--s2) 0 0;font-size:var(--fs-s);color:var(--muted)}
+ul.take{margin:0;padding-left:1.1em}ul.take li{margin:2px 0}
 .doc-key{display:flex;flex-wrap:wrap;gap:6px 18px;margin:var(--s1) 0;font-size:var(--fs-s)}
 .doc-key span::before{content:"";display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px;border-left:5px solid}
 .doc-key .m-held::before{border-color:#8fd0aa;background:#eaf6ee}.doc-key .m-hold::before{border-color:#f2bd9b;background:#fdf1e8}.doc-key .m-text::before{border-color:#c9c4b6;background:#f3f1ea}
@@ -576,13 +584,20 @@ i[data-agent],i[data-host]{font-style:normal}
               :'<p class="claim">Code already holds everything it can hold in this skill.</p>')+
       '</div></div>';
   }
+  function takeOver(p,skill){
+    var add=(p.items||[]).filter(function(x){return x.kind==='add'});
+    if(!add.length)return esc(p.line);
+    var h='<ul class="take">'+add.slice(0,3).map(function(x){return '<li>'+inline(x.text.length>150?x.text.slice(0,147)+'...':x.text)+'</li>'}).join('')+'</ul>';
+    if(add.length>3)h+='<button type="button" class="linkbtn" data-open-doc="'+esc(skill)+'">and '+(add.length-3)+' more in the text</button>';
+    return h;
+  }
   function partsTable(r){
     var todo=r.parts.filter(function(p){return p.status==='upgrade'});
     var rest=r.parts.filter(function(p){return p.status!=='upgrade'});
     var h='';
     if(todo.length){
-      h+='<div class="tw"><table class="tbl"><thead><tr><th scope="col">Part of the skill</th><th scope="col">What it contains</th><th scope="col">Status</th></tr></thead><tbody>'+
-        todo.map(function(p){return '<tr class="row"><td class="name">'+esc(p.name)+(p.file&&p.file!=='SKILL.md'?' <span class="note">'+esc(p.file)+'</span>':'')+' '+pill(r.origin&&notOwn(r.origin)?'none':'upgrade')+'</td><td class="wide" data-label="What it contains">'+esc(p.line)+'</td><td class="status">'+pill(notOwn(r.origin)?'none':'upgrade')+'</td></tr>'}).join('')+
+      h+='<div class="tw"><table class="tbl"><thead><tr><th scope="col">Part of the skill</th><th scope="col">Instructions code can take over</th><th scope="col">Status</th></tr></thead><tbody>'+
+        todo.map(function(p){return '<tr class="row"><td class="name">'+esc(p.name)+(p.file&&p.file!=='SKILL.md'?' <span class="note">'+esc(p.file)+'</span>':'')+' '+pill(r.origin&&notOwn(r.origin)?'none':'upgrade')+'</td><td class="wide" data-label="Instructions code can take over">'+takeOver(p,r.skill)+'</td><td class="status">'+pill(notOwn(r.origin)?'none':'upgrade')+'</td></tr>'}).join('')+
         '</tbody></table></div>';
     }
     if(rest.length){
@@ -607,6 +622,8 @@ i[data-agent],i[data-host]{font-style:normal}
         while(i<L.length&&/^\s*\|/.test(L[i].t)){rows.push(L[i]);i++}
         i--;
         var head=cells(rows[0].t),body=rows.slice(/^[\s|:-]+$/.test(rows[1]&&rows[1].t||'x')?2:1);
+        var ncol=body.reduce(function(n,r){return Math.max(n,cells(r.t).length)},head.length);
+        while(head.length<ncol)head.push('');
         out+='<div class="tw"><table class="tbl doc-tbl"><thead><tr>'+head.map(function(c){return '<th scope="col">'+inline(c)+'</th>'}).join('')+'</tr></thead><tbody>'+
           body.map(function(r){return '<tr class="'+(r.m?'m-'+r.m:'')+'">'+cells(r.t).map(function(c){return '<td>'+inline(c)+'</td>'}).join('')+'</tr>'}).join('')+'</tbody></table></div>';
         continue;
@@ -624,17 +641,21 @@ i[data-agent],i[data-host]{font-style:normal}
     }
     return '<div class="doc-key"><span class="m-hold">Code can hold this</span><span class="m-held">Code holds this today</span><span class="m-text">Stays text, needs your judgment</span></div><div class="doc">'+out+'</div>';
   }
-  function skillText(name){
-    var det=document.createElement('details');det.className='skill-text';
-    det.innerHTML='<summary>Read the text of this skill</summary><div class="body"><p class="sub tight" role="status">Reading...</p></div>';
-    var loaded=false;
-    det.addEventListener('toggle',function(){
-      if(!det.open||loaded)return;loaded=true;
-      get('/api/skilltext?name='+encodeURIComponent(name)).then(function(d){
-        det.querySelector('.body').innerHTML=d.lines.length?renderDoc(d):'<p class="sub">This skill has no SKILL.md to show.</p>';
-      }).catch(function(){loaded=false;det.querySelector('.body').innerHTML='<p class="sub">The text could not be read.</p>'});
-    });
-    return det;
+  function openSkillText(name){
+    var dlg=$('skill-dialog');
+    if(!dlg){
+      dlg=document.createElement('dialog');dlg.id='skill-dialog';
+      dlg.innerHTML='<div class="dlg-head"><b id="skill-dialog-title"></b><button type="button" class="btn" id="skill-dialog-x">Close</button></div><div class="dlg-body" id="skill-dialog-body"></div>';
+      document.body.appendChild(dlg);
+      $('skill-dialog-x').onclick=function(){dlg.close()};
+      dlg.addEventListener('click',function(e){if(e.target===dlg)dlg.close()});
+    }
+    $('skill-dialog-title').textContent=name+' / SKILL.md';
+    $('skill-dialog-body').innerHTML='<p class="sub tight" role="status">Reading...</p>';
+    if(!dlg.open)dlg.showModal();
+    get('/api/skilltext?name='+encodeURIComponent(name)).then(function(d){
+      $('skill-dialog-body').innerHTML=d.lines.length?renderDoc(d):'<p class="sub">This skill has no SKILL.md to show.</p>';
+    }).catch(function(){$('skill-dialog-body').innerHTML='<p class="sub">The text could not be read.</p>'});
   }
   function drawCheck(name){
     var body=$('check-body'),my=++seq;
@@ -654,7 +675,8 @@ i[data-agent],i[data-host]{font-style:normal}
           partsTable(r);
       }
       wireClaim(r.skill);
-      if(r.total)body.appendChild(skillText(r.skill));
+      if(r.total){var od=document.createElement('p');od.className='open-doc';od.innerHTML='<button type="button" class="linkbtn" data-open-doc="'+esc(r.skill)+'">Open the SKILL.md</button> to read the whole text with every instruction marked.';body.appendChild(od)}
+      body.querySelectorAll('[data-open-doc]').forEach(function(b){b.onclick=function(){openSkillText(b.dataset.openDoc)}});
       body.querySelectorAll('.band').forEach(glow);
       body.querySelectorAll('[data-to]').forEach(count);
       requestAnimationFrame(function(){requestAnimationFrame(function(){body.querySelectorAll('#split i').forEach(function(i){i.style.width=i.dataset.w+'%'})})});

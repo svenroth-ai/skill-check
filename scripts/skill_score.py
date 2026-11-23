@@ -62,16 +62,18 @@ def score(skill: Path) -> dict:
     parts, T = [], {"total": 0, "hold": 0, "enforced": 0}
     for r in doc["requirements"]:
         t = h = e = 0
+        items = []
         for a in r["acs"]:
             t += 1
             h += a["class"] in HOLDS
             e += is_enforced(a, scripts)
+            items.append({"text": a["text"], "kind": "held" if is_enforced(a, scripts) else "add" if a["class"] in HOLDS else "text"})
         T["total"] += t
         T["hold"] += h
         T["enforced"] += e
         src = r["acs"][0]["source"].split(":")[0] if r["acs"] else ""
         parts.append({"name": r["text"], "file": src, "total": t, "hold": h, "enforced": e, "add": h - e, "text": t - h,
-                      "status": "upgrade" if h > e else "text" if h == 0 else "good",
+                      "status": "upgrade" if h > e else "text" if h == 0 else "good", "items": items,
                       "line": part_line(t, h, e)})
     total, hold, enf = T["total"], T["hold"], T["enforced"]
     status = "none" if total == 0 else "upgrade" if hold > enf else "good"
