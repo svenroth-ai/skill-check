@@ -13,6 +13,7 @@ import json
 import re
 from pathlib import Path
 
+import skill_intent
 import skill_origin
 import skill_score
 
@@ -89,7 +90,14 @@ def control(skill: Path, status: dict | None) -> dict | None:
         parts.append({"name": r.get("text", ""), "lines": lines, "tests": c["test"], "prose": c["prose"], "open": c["open"]})
     approved = _json(skill / "baseline" / "approved.json")
     return {"parts": parts, "totals": T, "controlled_at": (status or {}).get("controlled_at") or None,
-            "approved": isinstance(approved, dict)}
+            "approved": isinstance(approved, dict), "caps": skill_intent.by_capability(skill, trace, acs, skill_score.HOLDS)}
+
+
+def intent_open(skill: Path) -> int:
+    """1 while the description of the skill is missing or waits for its owner's confirmation, else 0."""
+    if (skill / "baseline" / "approved.json").is_file() and skill_intent.load(skill) is None:
+        return 0  # put under control before descriptions existed: not asked again here
+    return int(not skill_intent.is_confirmed(skill_intent.load(skill)))
 
 
 def stage(skill: Path, status: dict | None, open_questions: int) -> tuple[str, int]:
@@ -109,7 +117,7 @@ def stage(skill: Path, status: dict | None, open_questions: int) -> tuple[str, i
 
 def read(skill: Path, status: dict | None) -> dict:
     qs = questions(skill)
-    name, n = stage(skill, status, len(qs))
+    name, n = stage(skill, status, len(qs) + intent_open(skill))
     return {"skill": skill.name, "stage": name, "open": n,
             "questions": qs, "report": report(skill, status), "control": control(skill, status),
             "origin": skill_origin.origin(skill)}

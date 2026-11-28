@@ -182,6 +182,8 @@ dialog#skill-dialog::backdrop{background:rgba(20,18,14,.55)}
 .dlg-head{position:sticky;top:0;z-index:1;display:flex;justify-content:space-between;align-items:center;gap:var(--s2);padding:var(--s2) var(--s3);background:#fff;border-bottom:1px solid var(--hair)}
 .dlg-body{padding:0 var(--s3) var(--s3);overflow:auto;max-height:calc(90vh - 70px)}
 .abstract{font-size:var(--fs-l);line-height:1.5;max-width:70ch;margin:0 0 var(--s2)}
+.who{font-size:var(--fs-s);color:var(--muted);margin:calc(-1 * var(--s1)) 0 var(--s2)}
+ul.plainlist{margin:var(--s1) 0 0;padding-left:1.2em}ul.plainlist li{margin:4px 0;max-width:70ch}
 details.sections{margin:0 0 var(--s2)}details.sections h3{margin:var(--s2) 0 4px;font-size:var(--fs-m)}details.sections p{margin:0;max-width:70ch}
 .linkbtn{background:none;border:0;padding:0;font:inherit;color:var(--teal);text-decoration:underline;cursor:pointer}
 .open-doc{margin:var(--s2) 0 0;font-size:var(--fs-s);color:var(--muted)}
@@ -696,10 +698,11 @@ i[data-agent],i[data-host]{font-style:normal}
           partsTable(r);
       }
       wireClaim(r.skill);
-      get('/api/summary?name='+encodeURIComponent(r.skill)).then(function(m){
-        var el=$('summary');if(!el||my!==seq)return;
-        el.innerHTML='<p class="abstract">'+esc(m.abstract)+'</p>'+(m.sections.length?'<details class="sections"><summary>What it does, section by section</summary>'+
-          m.sections.map(function(x){return '<h3>'+esc(x.name)+'</h3><p>'+esc(x.text)+'</p>'}).join('')+'</details>':'');
+      get('/api/about?name='+encodeURIComponent(r.skill)).then(function(m){
+        var el=$('summary');if(!el||my!==seq||!m.purpose)return;
+        el.innerHTML='<p class="abstract">'+esc(m.purpose)+'</p>'+whoSays(m)+
+          (m.capabilities.length?'<details class="sections"><summary>'+(m.source==='written'?'What it can do':'What it does, section by section')+'</summary>'+
+          m.capabilities.map(function(x){return '<h3>'+esc(x.name)+'</h3><p>'+esc(x.text)+'</p>'}).join('')+extrasHTML(m)+'</details>':'');
       }).catch(function(){});
       body.querySelectorAll('[data-open-doc]').forEach(function(b){b.onclick=function(){openSkillText(b.dataset.openDoc)}});
       body.querySelectorAll('.band').forEach(glow);
@@ -887,8 +890,8 @@ i[data-agent],i[data-host]{font-style:normal}
       '<p class="sub">You will keep improving this skill. The risk: one day something that worked yesterday stops working, because a change touched it quietly and nobody noticed. Keep control prevents that. We write down what the skill does and tie a test to every section we can check. From then on, every change is checked against that list, and you are told which section no longer works.</p>'+
       '<ol class="ladder" id="cs-ladder" aria-label="Three levels of control">'+ladderHTML(2)+'</ol>'+
       '<div class="ctl"><div class="card"><h3 style="margin-top:0 !important">What happens when you press Go</h3><ol class="flow">'+
-      '<li><span class="sn" aria-hidden="true">1</span><div><b>You read what the skill does</b><p>A short summary, then a few words for each section of the skill.</p></div></li>'+
-      '<li><span class="sn" aria-hidden="true">2</span><div><b>You see which sections have tests</b><p>Wherever code can check that the skill still works, there is a test. That is what control means: it is written down, and a test holds it.</p></div></li>'+
+      '<li><span class="sn" aria-hidden="true">1</span><div><b>You read what the skill does</b><p>What it is for, what it can do, a few examples, and what it never does. You confirmed this at the start of the upgrade.</p></div></li>'+
+      '<li><span class="sn" aria-hidden="true">2</span><div><b>You see what the tests hold</b><p>For each thing the skill can do, how many tests check that it still works. That is what control means: it is written down, and a test holds it.</p></div></li>'+
       '<li><span class="sn" aria-hidden="true">3</span><div><b>You turn it on in the chat</b><p>Skill Upgrade saves the list as the agreement and keeps the tests with the skill.</p></div></li>'+
       '<li><span class="sn" aria-hidden="true">4</span><div><b>From then on, changes are checked</b><p>After a change to this skill, the tests run and tell you which instruction no longer holds.</p></div></li></ol>'+
       '<p class="more">Nothing in your skill\'s behavior is changed. The list and the tests are saved next to the skill.</p>'+
@@ -896,30 +899,44 @@ i[data-agent],i[data-host]{font-style:normal}
       '<div class="next2" style="grid-template-columns:1fr"><div><h3>Not now?</h3><p>You can skip this and come back to it any time.</p><a class="btn alt" href="#/skills">Back to all skills</a></div></div>';
   }
   function norm(t){return String(t||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}
+  function whoSays(m){
+    if(m.source!=='written')return '<p class="who">Taken from the skill\'s own text. Skill Upgrade writes it in plain words and asks you to confirm it.</p>';
+    return '<p class="who">'+(m.confirmed?'Confirmed by you.':'Proposed by Skill Upgrade. Not confirmed by you yet.')+'</p>';
+  }
+  function extrasHTML(m){
+    var h='';
+    if(m.scenarios&&m.scenarios.length)h+='<h3>For example</h3><ul class="plainlist">'+m.scenarios.map(function(s){return '<li>'+esc(s.text)+'</li>'}).join('')+'</ul>';
+    if(m.non_goals&&m.non_goals.length)h+='<h3>What it never does</h3><ul class="plainlist">'+m.non_goals.map(function(s){return '<li>'+esc(s.text)+'</li>'}).join('')+'</ul>';
+    return h;
+  }
   function drawControlList(name){
     var body=$('clist-body'),my=++seq,e=encodeURIComponent(name);
     chosen=name;setNav();
     body.innerHTML='<p class="sub" role="status">Reading the skill...</p>';
-    Promise.all([get('/api/upgrade?name='+e),get('/api/summary?name='+e)]).then(function(rs){
+    Promise.all([get('/api/upgrade?name='+e),get('/api/about?name='+e)]).then(function(rs){
       if(my!==seq)return;
       var u=rs[0],m=rs[1],c=u.control,h=csub(1,name);
       if(!c){
         body.innerHTML=h+'<h2 tabindex="-1">Nothing to show yet</h2><p class="sub">This page appears after the upgrade has run its tests. Start the upgrade for '+esc(name)+' first.</p><a class="btn big" href="#/upgrade/'+e+'">Back to the upgrade</a>';
         return;
       }
-      var t=c.totals,tested=0;
-      var tests={};c.parts.forEach(function(p){tests[norm(p.name)]=p.tests});
-      var secs=m.sections.map(function(x){
-        var n=tests[norm(x.name)];
-        if(n)tested++;
-        return '<div class="card part"><div class="ph"><b>'+esc(x.name)+'</b>'+(n===undefined?'':n?'<span class="pill done">Checked by '+n+' '+plural(n,'test','tests')+'</span>':'<span class="pill txt">Written text only</span>')+'</div><p style="margin:0">'+esc(x.text)+'</p></div>';
+      var t=c.totals;
+      var byId={},byName={};(c.caps||[]).forEach(function(x){byId[x.id]=x});c.parts.forEach(function(p){byName[norm(p.name)]=p.tests});
+      var secs=m.capabilities.map(function(x){
+        var k=byId[x.id],n=k?k.tests:byName[norm(x.name)];
+        var pill=n===undefined?'':n?'<span class="pill done">Checked by '+n+' '+plural(n,'test','tests')+'</span>':'<span class="pill txt">Written text only</span>';
+        return '<div class="card part"><div class="ph"><b>'+esc(x.name)+'</b>'+pill+'</div><p style="margin:0">'+esc(x.text)+'</p></div>';
       }).join('');
+      if(byId.ALL){var a=byId.ALL;secs+='<div class="card part"><div class="ph"><b>'+esc(a.name)+'</b>'+(a.tests?'<span class="pill done">Checked by '+a.tests+' '+plural(a.tests,'test','tests')+'</span>':'<span class="pill txt">Written text only</span>')+'</div><p style="margin:0">'+esc(a.text)+'</p></div>'}
       h+='<h2 tabindex="-1">What we keep</h2>'+
-        '<p class="sub">This is what <b>'+esc(name)+'</b> does, written down in plain words. It is the agreement between you and the skill. When you want to change the skill, you change this list on purpose first.</p>'+
-        '<p class="sub">The safety comes from the tests: for every part that code can check, we made a test. After a change, the tests run and tell you which part no longer works.</p>'+
-        '<div class="card"><p class="abstract" style="margin:0">'+esc(m.abstract)+'</p></div>'+
-        '<h3>Section by section</h3>'+secs+
+        '<p class="sub">This is what <b>'+esc(name)+'</b> does, written down in plain words. It is the agreement between you and the skill. When you want to change the skill, you change this description on purpose first.</p>'+
+        '<p class="sub">The safety comes from the tests: for everything the skill can do that code can check, we made tests. After a change, the tests run and tell you what no longer works.</p>'+
+        '<div class="card"><p class="abstract" style="margin:0">'+esc(m.purpose)+'</p>'+whoSays(m)+'</div>'+
+        '<h3>What it can do</h3>'+secs+(extrasHTML(m)?'<div class="card">'+extrasHTML(m).replace('<h3>','<h3 style="margin-top:0 !important">')+'</div>':'')+
         '<p class="sub"><b>'+t.tests+' of '+t.lines+' '+plural(t.lines,'instruction','instructions')+' are held by a test.</b> The rest are written text, as you decided.</p>';
+      if(m.source==='written'&&!m.confirmed&&!c.controlled_at){
+        h+='<p class="legend">You have not confirmed this description yet. Skill Upgrade asks you in the chat; control starts after you confirm it.</p>';
+      }
       if(t.open>0){
         h+='<p class="legend">'+t.open+' '+plural(t.open,'instruction has','instructions have')+' no passing test yet. Finish the upgrade first: control needs a passing test for every instruction that code can hold.</p><a class="btn big" href="#/upgrade/'+e+'" style="margin-top:var(--s1)">Back to the upgrade</a>';
       }else if(c.controlled_at){

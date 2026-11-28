@@ -97,9 +97,15 @@ class Grill(unittest.TestCase):
         _d, g = ca.run(doc(("Ask before you publish.", None)))
         self.assertEqual(g["questions"], 0)
 
-    def test_batches_hold_at_most_twelve(self):
-        _d, g = ca.run(doc(*[("The file must be 100 px wide.", None)] * 17))
-        self.assertEqual([len(b) for b in g["batches"]], [12, 5])
+    def test_at_most_five_questions_spread_over_the_parts(self):
+        d = doc(*[("The file must be 100 px wide.", None)] * 9)
+        for i, a in enumerate(d["requirements"][0]["acs"]):  # three parts of three
+            a["id"] = f"AC-{i // 3 + 1}.{i % 3 + 1}"
+        _d, g = ca.run(d)
+        self.assertEqual(g["questions"], 5)
+        self.assertEqual([len(b) for b in g["batches"]], [5])
+        self.assertEqual(sorted({q["ac"].split(".")[0] for q in g["batches"][0]}), ["AC-1", "AC-2", "AC-3"])
+        self.assertEqual(len(g["auto"]), 4)
 
     def test_counts_and_handling_are_written_into_the_doc(self):
         d, g = ca.run(doc(("Ask first.", None), ("Keep it short.", None)))

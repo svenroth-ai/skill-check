@@ -11,7 +11,7 @@ Routes: /            the app (web/app.html)
         /api/skill?name=NAME  one skill with its parts
         /api/upgrade?name=NAME  the open questions and the report of an upgraded skill (scripts/upgrade_view.py)
         /api/skilltext?name=NAME  the text of SKILL.md (scripts/skill_text.py)
-        /api/summary?name=NAME  what the skill does: an abstract and a few words per section (scripts/skill_summary.py)
+        /api/about?name=NAME    what the skill does: purpose, capabilities, scenarios, non-goals (scripts/skill_intent.py)
         /api/classified  every classified inventory (out/classify/*.inventory.json), keyed by skill
 Binds to 127.0.0.1 only. Exit codes: 0 stopped; 2 port in use.
 """
@@ -32,7 +32,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import skill_origin  # noqa: E402
 import skill_score  # noqa: E402
-import skill_summary  # noqa: E402
+import skill_intent  # noqa: E402
 import skill_text  # noqa: E402
 import skill_usage  # noqa: E402
 import upgrade_view  # noqa: E402
@@ -170,11 +170,11 @@ def make_handler(out: Path, roots: list[Path] | None = None, projects: Path | No
                 if d is None:
                     return self._send(404, b"no such skill", "text/plain; charset=utf-8")
                 return self._json(skill_text.text(d))
-            if path == "/api/summary":
+            if path == "/api/about":
                 d = skill_path(roots, urllib.parse.parse_qs(query).get("name", [""])[0])
                 if d is None:
                     return self._send(404, b"no such skill", "text/plain; charset=utf-8")
-                return self._json(skill_summary.summary(d))
+                return self._json(skill_intent.intent(d))
             if path == "/api/upgrade":
                 name = urllib.parse.parse_qs(query).get("name", [""])[0]
                 d = skill_path(roots, name)

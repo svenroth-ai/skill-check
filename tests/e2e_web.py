@@ -148,6 +148,14 @@ def main() -> int:
             status_file.write_text(json.dumps({"stage": {"name": "ready", "open": 0}, "total": 3, "passing": 2, "failing": 0,
                                                "gap": 0, "text": 1, "other": 0,
                                                "acs": {"A1": "passing", "A2": "passing", "A3": "text"}}), encoding="utf-8")
+            import skill_intent  # the owner confirmed what the skill does, and every instruction has a capability
+            demo = skills / "demo"
+            skill_intent.write(demo, {"purpose": "Uploads captioned clips for the channel.", "non_goals": ["It never posts by itself."],
+                                      "capabilities": [{"name": "Upload", "text": "Checks the size and uploads one clip."},
+                                                       {"name": "Voice", "text": "Writes captions in a natural tone."}],
+                                      "scenarios": [{"text": "You give a clip, it is checked and uploaded.", "caps": ["Upload"]}]})
+            skill_intent.confirm(demo, "NG-1")
+            skill_intent.assign(demo, demo / "baseline" / "trace.json", {"A1": "CAP-1", "A2": "CAP-1", "A3": "CAP-2"})
             page.goto(url + "#/control")
             page.reload()
             page.wait_for_selector("#control-body table.tbl")
@@ -165,6 +173,11 @@ def main() -> int:
             check("What we keep" in page.locator("#clist-body h2").inner_text(), f"{label}: control shows what the skill does")
             check(re.search(r"\b2 of \d+ instructions are held by a test", page.locator("#clist-body").inner_text()) is not None, f"{label}: control says how much a test holds")
             check(page.locator("#clist-body .abstract").count() == 1, f"{label}: control starts with the short summary")
+            caps = page.locator("#clist-body .part").all_inner_texts()
+            check(len(caps) == 2 and "Checked by 2 tests" in caps[0] and "Written text only" in caps[1],
+                  f"{label}: each capability says what holds it: {caps}")
+            check("It never posts by itself." in page.locator("#clist-body").inner_text(), f"{label}: control lists what the skill never does")
+            check("Confirmed by you." in page.locator("#clist-body").inner_text(), f"{label}: control says the owner confirmed it")
             page.click("#turn-on")
             page.wait_for_selector("#turn-note", state="visible", timeout=4000)
             check(page.locator("#turn-note").is_visible(), f"{label}: turning on points to the chat")

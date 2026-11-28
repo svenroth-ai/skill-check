@@ -21,8 +21,10 @@ and one suggested handling:
 
 The grill lists only what is worth a person's time, and only where the text does not already answer:
   script?       a mechanic AC that names no script and has no check: should code check it? (suggested yes)
+At most five are asked, taken in turn from different parts of the skill. The rest are listed under "auto": they keep
+their suggested answer and are shown with the tests to build, without a question.
 An ask is not asked about: the sentence already says a person decides. A mechanic that names its script
-is not asked either. Everything else is decided by the classes above and shown in one batch to skim.
+is not asked either. Everything else is decided by the classes above.
 Exit codes: 0 written or printed; 2 unreadable input.
 """
 from __future__ import annotations
@@ -57,7 +59,7 @@ JUDGEMENT = re.compile(r"\b(judge|judgement|judgment|visual(ly)?|looks?|feel|tas
 SCRIPT = re.compile(r"\b\w+\.(py|sh|cjs)\b")
 PERSON = re.compile(r"\b(sven|user|reviewer|owner|learner|human|person|you|his|her|their)\b", re.I)
 HANDLING = {"ask": "scenario-gate", "command": "pin-args", "mechanic": "script", "judgement": "scenario", "text": "keep"}
-BATCH = 12
+MAX_QUESTIONS = 5
 # The grill speaks to people who may not remember what an AC is: every question carries a plain explanation.
 WHY_SCRIPT = ("This rule says exactly what must be true, but no script checks it yet. A rule that only stands in the "
               "text is a request {agent} can skip under pressure; a script that checks it cannot be skipped. "
@@ -117,9 +119,25 @@ def run(doc: dict) -> tuple[dict, dict]:
                 # measurable, but no script is named and no check exists: the one thing worth a person's answer
                 questions.append({"ac": a["id"], "kind": "script?", "text": a["text"],
                                   "why": agent.say(WHY_SCRIPT), "suggest": "yes: check this in code and bind a test"})
-    batches = [questions[i:i + BATCH] for i in range(0, len(questions), BATCH)]
+    asked, auto = spread(questions, MAX_QUESTIONS)
     doc["classes"] = counts
-    return doc, {"subject": doc.get("subject", ""), "counts": counts, "questions": len(questions), "batches": batches}
+    return doc, {"subject": doc.get("subject", ""), "counts": counts, "questions": len(asked),
+                 "batches": [asked] if asked else [], "auto": auto}
+
+
+def spread(questions: list[dict], limit: int) -> tuple[list[dict], list[dict]]:
+    """At most `limit` questions, one part of the skill after the other, so five questions are not all about one
+    section. The order inside a part is kept. Returns (asked, left to their suggested answer)."""
+    parts: dict[str, list[dict]] = {}
+    for q in questions:
+        parts.setdefault(q["ac"].rsplit(".", 1)[0], []).append(q)
+    asked = []
+    while len(asked) < limit and any(parts.values()):
+        for k in list(parts):
+            if parts[k] and len(asked) < limit:
+                asked.append(parts[k].pop(0))
+    chosen = {q["ac"] for q in asked}
+    return [q for q in questions if q["ac"] in chosen], [q for q in questions if q["ac"] not in chosen]
 
 
 def main() -> int:
@@ -142,7 +160,7 @@ def main() -> int:
         a.grill.write_text(json.dumps(grill, ensure_ascii=False, indent=1), encoding="utf-8")
     c = grill["counts"]
     print(f"{sum(c.values())} ACs: " + ", ".join(f"{k} {v}" for k, v in c.items())
-          + f"; {grill['questions']} question{'s' if grill['questions'] != 1 else ''} for the grill in {len(grill['batches'])} batch(es)")
+          + f"; {grill['questions']} question{'s' if grill['questions'] != 1 else ''} to ask, {len(grill['auto'])} left to the suggestion")
     return 0
 
 

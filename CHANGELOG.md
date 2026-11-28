@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- The skill page shows what a skill is for, what it can do, a few examples and what it never does. Before an upgrade this comes from the skill's own text; Skill Upgrade writes it in plain words and asks you to confirm it.
+- Keep control shows each thing the skill can do with the number of tests that hold it, plus the rules that hold for everything.
+- The Upgrade page counts your confirmation of what the skill does as an open question until you gave it.
 - Every skill page starts with a short summary of what the skill does, and a list of its sections in a few words each. Skill Upgrade writes a better one in plain words; without it the summary comes from the skill's own description and headings.
 - "Open the SKILL.md" sits right under the parts table and shows the text the way GitHub does.
 - The Upgrade page knows where the upgrade stands (reading, your questions, tests, report), also when you answered in the chat. The Start button is only there before the upgrade begins.

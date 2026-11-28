@@ -28,6 +28,10 @@ def baseline(skill: Path, trace=TRACE, grill=GRILL):
     b.mkdir()
     (b / "trace.json").write_text(json.dumps(trace), encoding="utf-8")
     (b / "grill.json").write_text(json.dumps(grill), encoding="utf-8")
+    import skill_intent  # the owner has confirmed what the skill does
+    skill_intent.write(skill, {"purpose": "Uploads clips.", "capabilities": [{"name": "Upload", "text": "Uploads one clip."}],
+                               "scenarios": [{"text": "You give a clip, it goes up.", "caps": ["Upload"]}]})
+    skill_intent.confirm(skill, "none")
 
 
 class View(unittest.TestCase):
@@ -143,10 +147,11 @@ class Route(unittest.TestCase):
         self.assertEqual(d["file"], "SKILL.md")
         self.assertIn("caption", d["text"].lower())
         self.assertEqual(self.req("GET", "/api/skilltext?name=nope", origin=None)[0], 404)
-        s, b = self.req("GET", "/api/summary?name=demo", origin=None)
+        s, b = self.req("GET", "/api/about?name=demo", origin=None)
         self.assertEqual(s, 200)
-        self.assertEqual(set(json.loads(b)), {"abstract", "sections", "source"})
-        self.assertEqual(self.req("GET", "/api/summary?name=nope", origin=None)[0], 404)
+        self.assertEqual(json.loads(b)["source"], "written")
+        self.assertIn("capabilities", json.loads(b))
+        self.assertEqual(self.req("GET", "/api/about?name=nope", origin=None)[0], 404)
 
     def test_the_stage_follows_answers_given_in_the_chat(self):
         status = {"stage": {"name": "questions", "open": 1}}
@@ -157,6 +162,17 @@ class Route(unittest.TestCase):
         self.assertEqual(uv.read(self.skill, status)["stage"], "binding")
         self.assertEqual(uv.read(self.skill, None)["stage"], "binding")
         self.assertEqual(uv.read(self.skill, {"stage": {"name": "ready", "open": 0}})["stage"], "ready")
+
+    def test_an_unconfirmed_description_keeps_the_stage_at_the_questions(self):
+        import skill_intent
+        t = json.loads(json.dumps(TRACE))
+        t["requirements"][0]["acs"][1]["decision"] = "text: stays written"
+        (self.skill / "baseline" / "trace.json").write_text(json.dumps(t), encoding="utf-8")
+        skill_intent.write(self.skill, {"purpose": "Uploads clips, now two.", "capabilities": [{"name": "Upload", "text": "Uploads."}],
+                                        "scenarios": [{"text": "You give a clip, it goes up.", "caps": ["Upload"]}]})
+        self.assertEqual(uv.read(self.skill, None)["stage"], "questions")
+        skill_intent.confirm(self.skill, "none")
+        self.assertEqual(uv.read(self.skill, None)["stage"], "binding")
 
     def test_a_user_can_say_a_skill_is_not_theirs_and_it_is_then_refused(self):
         from unittest import mock
